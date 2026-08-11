@@ -1,0 +1,83 @@
+# generated: 2026-07-27T23:09:26-03:00
+# last_updated: 2026-07-28
+# project: smart-dispatch-ia-spec-v2
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; sprint-status surfaces open ones
+
+generated: 2026-07-27T23:09:26-03:00
+last_updated: 2026-07-28
+project: smart-dispatch-ia-spec-v2
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  epic-1: in-progress
+  1-1-launch-the-local-simulator-safely-and-reproducibly: done
+  1-2-capture-and-validate-a-work-order: done
+  1-3-derive-dispatch-requirements-with-provenance: done
+  1-4-determine-technician-eligibility-before-scoring: done
+  1-5-score-and-rank-eligible-technicians-deterministically: done
+  1-6-explain-recommendation-confidence-and-data-quality: done
+  1-7-execute-an-auditable-dispatch-run: in-progress
+  1-8-recover-protect-and-benchmark-dispatch-runs: backlog
+  1-9-review-a-recommendation-in-the-accessible-browser-interface: backlog
+  1-10-migrate-the-brownfield-prototype-safely: backlog
+  1-11-verify-the-first-safe-dispatch-increment: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-record-the-dispatchers-assignment-decision: backlog
+  2-2-record-the-service-outcome-for-episodic-learning: backlog
+  2-3-complete-baseline-episodic-learning: backlog
+  2-4-complete-the-accessible-decision-and-outcome-flow: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-promote-semantic-patterns-conservatively-and-exactly-once: backlog
+  3-2-apply-active-memory-without-changing-eligibility: backlog
+  3-3-compare-identical-scenarios-with-memory-on-and-off: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-compute-and-review-reproducible-prototype-kpis: backlog
+  4-2-replay-and-reset-academic-scenarios-safely: backlog
+  4-3-generate-and-export-the-academic-evidence-package: backlog
+  4-4-verify-the-course-ready-system-and-complete-api-cutover: backlog
+  epic-4-retrospective: optional

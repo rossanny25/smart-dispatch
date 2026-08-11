@@ -1,0 +1,18 @@
+services:
+  smart-dispatch:
+    build:
+      context: .
+    container_name: smart-dispatch-ia
+    environment:
+      SMART_DISPATCH_HOST: 0.0.0.0
+      SMART_DISPATCH_PORT: 8050
+      SMART_DISPATCH_DB_PATH: /app/runtime-data/smart_dispatch.db
+      SMART_DISPATCH_LEARNING_STORE_PATH: /app/runtime-data/learning_store.runtime.json
+    ports:
+      - "8050:8050"
+    volumes:
+      - smart_dispatch_data:/app/runtime-data
+    restart: unless-stopped
+
+volumes:
+  smart_dispatch_data:

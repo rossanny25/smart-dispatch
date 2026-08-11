@@ -1,0 +1,1 @@
+"""Pure technician eligibility policy."""

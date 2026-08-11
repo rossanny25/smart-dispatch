@@ -1,0 +1,33 @@
+smart-dispatch-ia  | INFO:     Started server process [1]
+smart-dispatch-ia  | INFO:     Waiting for application startup.
+smart-dispatch-ia  | INFO:     Application startup complete.
+smart-dispatch-ia  | INFO:     Uvicorn running on http://0.0.0.0:8050 (Press CTRL+C to quit)
+smart-dispatch-ia  | INFO:     192.168.65.1:58601 - "GET / HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58601 - "GET /index.css HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58602 - "GET /main.js HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58602 - "GET /api/technicians HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58601 - "GET /api/orders HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58604 - "GET /api/memory/learning HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58603 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+smart-dispatch-ia  | INFO:     192.168.65.1:58633 - "GET /api/technicians HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58635 - "GET /api/orders HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58634 - "GET /api/memory/learning HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58700 - "POST /api/dispatch/simulate HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58735 - "GET / HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58735 - "GET /index.css HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58734 - "GET /main.js HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58735 - "GET /api/orders HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58734 - "GET /api/technicians HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58736 - "GET /api/memory/learning HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58737 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+smart-dispatch-ia  | INFO:     192.168.65.1:58738 - "POST /api/dispatch/confirm HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58745 - "GET /api/orders HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58743 - "GET /api/technicians HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58744 - "GET /api/memory/learning HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58806 - "POST /api/dispatch/simulate HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58871 - "POST /api/dispatch/confirm HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58871 - "GET /api/technicians HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58873 - "GET /api/orders HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58872 - "GET /api/memory/learning HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58878 - "GET /api/technicians HTTP/1.1" 200 OK
+smart-dispatch-ia  | INFO:     192.168.65.1:58907 - "GET /api/orders HTTP/1.1" 200 OK

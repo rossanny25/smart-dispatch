@@ -1,0 +1,1 @@
+"""Driven and entry adapters."""

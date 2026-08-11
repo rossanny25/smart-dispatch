@@ -1,0 +1,35 @@
+[build-system]
+requires = ["uv_build==0.11.16"]
+build-backend = "uv_build"
+
+[project]
+name = "smart-dispatch-ia"
+version = "2.1.0"
+description = "Local educational simulator for deterministic, auditable field-service dispatch."
+readme = "README.md"
+requires-python = "==3.12.10"
+dependencies = [
+  "fastapi==0.138.2",
+  "uvicorn==0.46.0",
+  "pydantic==2.13.4",
+  "sqlalchemy==2.0.51",
+  "alembic==1.18.5",
+]
+
+[project.scripts]
+smart-dispatch = "app.runtime:main"
+
+[dependency-groups]
+dev = [
+  "pytest==9.1.1",
+  "coverage==7.13.5",
+  "playwright==1.60.0",
+]
+
+[tool.uv.build-backend]
+module-name = "app"
+module-root = ""
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

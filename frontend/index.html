@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Dispatch IA v2.0 - Consola de Control de Campo</title>
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Barra Superior -->
+    <header class="app-header">
+      <div class="header-logo">
+        <i class="fa-solid fa-microchip-ai logo-icon"></i>
+        <div>
+          <h1>Smart Dispatch IA</h1>
+          <span class="sub-logo">v2.0 • Orquestación Cíclica y Memoria Persistente</span>
+        </div>
+      </div>
+      
+      <!-- Panel de Control de Frenos y Aceleradores -->
+      <div class="env-controls">
+        <span class="env-label"><i class="fa-solid fa-sliders"></i> Factores de Entorno:</span>
+        <div class="control-group">
+          <label for="weather-select"><i class="fa-solid fa-cloud-sun"></i> Clima</label>
+          <select id="weather-select">
+            <option value="soleado">Soleado (Acelerador)</option>
+            <option value="lluvia_moderada">Lluvia Moderada</option>
+            <option value="lluvia_extrema">Tormenta / Lluvia (Freno)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="traffic-select"><i class="fa-solid fa-car"></i> Tráfico</label>
+          <select id="traffic-select">
+            <option value="normal">Normal</option>
+            <option value="congestionado">Congestionado (Freno)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="gps-select"><i class="fa-solid fa-satellite"></i> Señal GPS</label>
+          <select id="gps-select">
+            <option value="online">Óptima (Acelerador)</option>
+            <option value="offline">Offline / Caída (Freno)</option>
+          </select>
+        </div>
+        <button id="btn-reset" class="btn btn-secondary" title="Resetear datos y memoria"><i class="fa-solid fa-arrow-rotate-left"></i> Reset</button>
+      </div>
+    </header>
+
+    <main class="app-content">
+      
+      <!-- Panel Izquierdo: Formularios y Trazas de Agentes -->
+      <section class="panel-left">
+        
+        <!-- Crear Nueva Orden -->
+        <div class="card card-glow">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-file-signature"></i> Nueva Solicitud de Servicio</h2>
+          </div>
+          <div class="card-body">
+            <form id="order-form">
+              <div class="form-group">
+                <label for="raw_text">Descripción de la Avería (Lenguaje Natural)</label>
+                <textarea id="raw_text" placeholder="Ej: Urgente fuga de gas en la sucursal Palermo, requiere matriculado para reparar regulador general..." required></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="address">Dirección Física</label>
+                  <input type="text" id="address" placeholder="Av. Santa Fe 3400" required>
+                </div>
+                <div class="form-group">
+                  <label for="zone">Zona</label>
+                  <select id="zone" required>
+                    <option value="Palermo">Palermo</option>
+                    <option value="Centro">Centro</option>
+                    <option value="Belgrano">Belgrano</option>
+                    <option value="Almagro">Almagro</option>
+                    <option value="Caballito">Caballito</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-bolt"></i> Ingresar y Procesar con IA</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Trazabilidad del Ciclo de Agentes -->
+        <div class="card card-glass" id="agent-cycle-card" style="display: none;">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-rotate"></i> Consola del Ciclo de Agentes (OODA)</h2>
+            <span class="active-badge animate-pulse" id="cycle-status-text">Procesando...</span>
+          </div>
+          <div class="card-body">
+            
+            <!-- Timeline de Agentes -->
+            <div class="agent-timeline">
+              
+              <!-- 1. Capture Agent -->
+              <div class="timeline-step" id="step-capture" data-agent="capture">
+                <div class="step-icon"><i class="fa-solid fa-filter"></i></div>
+                <div class="step-info">
+                  <h3>1. Agente de Captura</h3>
+                  <p class="step-summary">Estructurando lenguaje natural...</p>
+                </div>
+                <div class="step-status"><i class="fa-solid fa-spinner fa-spin"></i></div>
+              </div>
+
+              <!-- 2. Analyze Agent -->
+              <div class="timeline-step" id="step-analyze" data-agent="analyze">
+                <div class="step-icon"><i class="fa-solid fa-brain"></i></div>
+                <div class="step-info">
+                  <h3>2. Agente Analizador</h3>
+                  <p class="step-summary">Evaluando habilidades y criticidad...</p>
+                </div>
+                <div class="step-status"></div>
+              </div>
+
+              <!-- 3. Planning Agent -->
+              <div class="timeline-step" id="step-plan" data-agent="plan">
+                <div class="step-icon"><i class="fa-solid fa-route"></i></div>
+                <div class="step-info">
+                  <h3>3. Agente Planificador</h3>
+                  <p class="step-summary">Calculando candidatos y distancias...</p>
+                </div>
+                <div class="step-status"></div>
+              </div>
+
+              <!-- 4. Evaluation Agent -->
+              <div class="timeline-step" id="step-evaluate" data-agent="evaluate">
+                <div class="step-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="step-info">
+                  <h3>4. Agente Evaluador</h3>
+                  <p class="step-summary">Validando SLAs y normas de seguridad...</p>
+                </div>
+                <div class="step-status"></div>
+              </div>
+
+              <!-- 5. Learning Agent -->
+              <div class="timeline-step" id="step-learning" data-agent="learning">
+                <div class="step-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+                <div class="step-info">
+                  <h3>5. Agente de Aprendizaje</h3>
+                  <p class="step-summary">Listo para escuchar feedback...</p>
+                </div>
+                <div class="step-status"></div>
+              </div>
+
+            </div>
+
+            <!-- Panel de Detalles del Agente Seleccionado -->
+            <div class="agent-details-box" id="agent-details-box">
+              <div class="details-header">
+                <h4 id="details-agent-title">Selecciona un agente para ver sus trazas de pensamiento</h4>
+              </div>
+              <div class="details-body">
+                <pre id="details-json-output">Haga clic en cualquiera de los agentes arriba para inspeccionar su salida JSON estructurada y traza cognitiva de ejecución.</pre>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Panel Derecho: Técnicos, Memoria Persistente y Recomendación -->
+      <section class="panel-right">
+        
+        <!-- Tarjeta de Recomendación de Asignación -->
+        <div class="card card-glow" id="recommendation-card" style="display: none;">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-award"></i> Asignación Recomendada por IA</h2>
+          </div>
+          <div class="card-body">
+            <div class="recommendation-box">
+              <div class="rec-avatar">
+                <i class="fa-solid fa-user-gear"></i>
+              </div>
+              <div class="rec-main">
+                <h3 id="rec-tech-name">Nombre del Técnico</h3>
+                <p id="rec-tech-reasoning">Justificación del algoritmo...</p>
+                <div class="rec-stats">
+                  <span class="stat-badge"><i class="fa-solid fa-route"></i> <span id="rec-travel-time">0</span> min viaje</span>
+                  <span class="stat-badge"><i class="fa-solid fa-clock"></i> 90 min estimación</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="override-box">
+              <h3><i class="fa-solid fa-pencil-square"></i> Acciones del Despachador</h3>
+              <div class="confirm-options">
+                <button id="btn-confirm-recommended" class="btn btn-success"><i class="fa-solid fa-check"></i> Aprobar Recomendación</button>
+                <button id="btn-open-override" class="btn btn-warning"><i class="fa-solid fa-hand-holding-hand"></i> Cambiar Técnico (Override)</button>
+              </div>
+
+              <!-- Formulario de anulación (override) -->
+              <div id="override-form-container" class="override-form" style="display: none;">
+                <label for="override-tech-select">Seleccionar Técnico Alternativo:</label>
+                <select id="override-tech-select"></select>
+                <label for="override-feedback">Comentario del Despachador (Motivo de anulación):</label>
+                <textarea id="override-feedback" placeholder="Indica por qué prefieres este técnico en lugar del sugerido para que la IA aprenda..." required></textarea>
+                <button id="btn-confirm-override" class="btn btn-warning"><i class="fa-solid fa-floppy-disk"></i> Confirmar con Cambio</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Historial de Órdenes Pendientes -->
+        <div class="card card-glass">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-list-check"></i> Cola de Órdenes de Trabajo</h2>
+          </div>
+          <div class="card-body" style="max-height: 250px; overflow-y: auto;">
+            <div id="orders-list" class="orders-list">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Técnicos de Campo -->
+        <div class="card card-glass">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-users"></i> Técnicos de Servicio de Campo</h2>
+          </div>
+          <div class="card-body">
+            <div id="technicians-grid" class="tech-grid">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Memoria Semántica (Conocimiento Aprendido) -->
+        <div class="card card-glass">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-database"></i> Memoria Persistente de Aprendizaje Semántico</h2>
+          </div>
+          <div class="card-body">
+            <div id="memory-list" class="memory-list">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal de Finalización de Servicio -->
+  <div id="completion-modal" class="modal">
+    <div class="modal-content card-glass">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-circle-check"></i> Registrar Cierre de Servicio</h2>
+        <span class="close-btn" id="modal-close">&times;</span>
+      </div>
+      <div class="modal-body">
+        <p>El técnico asignado ha finalizado el trabajo de campo. Registre el tiempo real incurrido para que el **Agente de Aprendizaje** pueda calibrar futuros despachos.</p>
+        <form id="completion-form">
+          <input type="hidden" id="modal-order-id">
+          <input type="hidden" id="modal-tech-id">
+          <input type="hidden" id="modal-feedback">
+          
+          <div class="form-group">
+            <label for="real-duration">Duración Real del Trabajo (minutos)</label>
+            <input type="number" id="real-duration" value="90" min="10" max="600" required>
+            <small>Duración estimada estándar: 90 minutos.</small>
+          </div>
+          <button type="submit" class="btn btn-success"><i class="fa-solid fa-graduation-cap"></i> Completar y Aprender</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>

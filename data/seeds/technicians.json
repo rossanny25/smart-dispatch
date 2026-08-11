@@ -1,0 +1,57 @@
+[
+  {
+    "id": "tech_01",
+    "name": "Carlos Rodríguez",
+    "status": "disponible",
+    "zone": "Palermo",
+    "certifications": ["Gasista Matriculado", "Técnico HVAC"],
+    "shift": {"start": "08:00", "end": "16:00"},
+    "active_workload_hours": 3.5,
+    "rating": 4.7,
+    "gps_coordinates": {"lat": -34.5783, "lng": -58.4267}
+  },
+  {
+    "id": "tech_02",
+    "name": "Sofía Torres",
+    "status": "disponible",
+    "zone": "Centro",
+    "certifications": ["Redes WAN", "Fibra Óptica", "Seguridad en Alturas"],
+    "shift": {"start": "08:00", "end": "17:00"},
+    "active_workload_hours": 2.0,
+    "rating": 4.9,
+    "gps_coordinates": {"lat": -34.6037, "lng": -58.3816}
+  },
+  {
+    "id": "tech_03",
+    "name": "Juan Pérez",
+    "status": "disponible",
+    "zone": "Belgrano",
+    "certifications": ["Técnico Electricista A", "Seguridad en Alturas"],
+    "shift": {"start": "08:00", "end": "17:00"},
+    "active_workload_hours": 5.0,
+    "rating": 4.5,
+    "gps_coordinates": {"lat": -34.5621, "lng": -58.4560}
+  },
+  {
+    "id": "tech_04",
+    "name": "Ana Gómez",
+    "status": "disponible",
+    "zone": "Almagro",
+    "certifications": ["Plomero Matriculado"],
+    "shift": {"start": "09:00", "end": "18:00"},
+    "active_workload_hours": 1.5,
+    "rating": 4.6,
+    "gps_coordinates": {"lat": -34.6098, "lng": -58.4212}
+  },
+  {
+    "id": "tech_05",
+    "name": "Diego Díaz",
+    "status": "disponible",
+    "zone": "Caballito",
+    "certifications": ["Técnico HVAC", "Técnico Electricista A"],
+    "shift": {"start": "08:00", "end": "16:00"},
+    "active_workload_hours": 4.0,
+    "rating": 4.8,
+    "gps_coordinates": {"lat": -34.6177, "lng": -58.4430}
+  }
+]

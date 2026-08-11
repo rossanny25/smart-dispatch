@@ -1,0 +1,30 @@
+[
+  {
+    "key": "tech_efficiency_tech_02_networks",
+    "type": "calibracion_tiempo",
+    "learning_content": {
+      "description": "Sofía Torres resuelve incidencias de Fibra Óptica un 15% más rápido que la media general en base a 12 servicios históricos.",
+      "parameters": {
+        "technician_id": "tech_02",
+        "skill": "Fibra Óptica",
+        "modifier": 0.85
+      }
+    },
+    "confidence": 0.92,
+    "updated_at": "2026-06-28T19:19:30.522722"
+  },
+  {
+    "key": "preference_palermo_gas",
+    "type": "preferencia_usuario",
+    "learning_content": {
+      "description": "Preferencia marcada por el despachador para asignar a Carlos Rodríguez en trabajos de Gas en la zona de Palermo por calificaciones históricas.",
+      "parameters": {
+        "technician_id": "tech_01",
+        "zone": "Palermo",
+        "skill": "Gasista Matriculado"
+      }
+    },
+    "confidence": 0.85,
+    "updated_at": "2026-06-28T19:19:30.522724"
+  }
+]
