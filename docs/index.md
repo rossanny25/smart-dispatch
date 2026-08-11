@@ -18,6 +18,7 @@
 - [Development Guide](./development-guide.md)
 - [Runbook](./runbook.md)
 - [Final Delivery Guide](./final-delivery-guide.md)
+- [Final Report Ready Markdown](./final-report-ready.md)
 - [Final Report Draft](./final-report.md)
 - [Final Architecture Diagrams](./final-architecture-diagrams.md)
 - [Usage Session Log](./usage-session-log.md)

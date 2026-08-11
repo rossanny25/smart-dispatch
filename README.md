@@ -102,6 +102,9 @@ scope.
 For the final course delivery checklist, see
 [`docs/final-delivery-guide.md`](docs/final-delivery-guide.md).
 
+For the self-contained Markdown report with links, diagrams, screenshots, and
+logs, see [`docs/final-report-ready.md`](docs/final-report-ready.md).
+
 For day-to-day startup, shutdown, verification, and technical action notes, see
 [`docs/runbook.md`](docs/runbook.md).
 
