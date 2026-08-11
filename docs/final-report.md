@@ -7,7 +7,7 @@
 | Recurso | Link |
 | --- | --- |
 | Aplicacion en vivo | Pendiente de publicar |
-| Repositorio GitHub | Pendiente de publicar |
+| Repositorio GitHub | `git@github.com:rossanny25/smart-dispatch.git` |
 | Demo Docker local | `http://127.0.0.1:8050` |
 | Guia de ejecucion | `docs/runbook.md` |
 
