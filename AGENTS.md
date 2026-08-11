@@ -10,7 +10,7 @@ deployment changes.
 2. `_bmad-output/project-context.md` - detailed implementation rules for AI agents.
 3. `README.md` - setup, Docker, deploy, and report links.
 4. `docs/runbook.md` - operational commands and technical action log.
-5. `docs/final-report-ready.md` - final academic report source.
+5. `docs/final-report-ready.md` - final report source.
 6. `docs/Smart_Dispatch_IA_Informe_Final.pdf` - final submitted PDF artifact.
 
 ## Current Shape
@@ -35,12 +35,12 @@ deployment changes.
 - Use Pydantic contracts with strict boundary validation.
 - Do not move the project to React, Express, or another stack unless the user explicitly asks.
 - Do not add login/admin just because production apps usually have it; this MVP intentionally documents them as out of scope.
-- Do not remove seeds, screenshots, logs, or final-report files. They are grading evidence.
+- Do not remove seeds, screenshots, logs, or final-report files. They are product review evidence.
 - Do not revert user changes or unrelated worktree changes.
 
 ## Common Commands
 
-Docker course demo:
+Docker demo:
 
 ```bash
 docker compose up --build

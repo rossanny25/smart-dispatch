@@ -1,6 +1,6 @@
 # Cybersecurity Log
 
-This log documents security risks and mitigations for the academic prototype.
+This log documents security risks and mitigations for the current MVP.
 
 | Risk | Impact | Current Mitigation | Remaining Limitation |
 | --- | --- | --- | --- |
@@ -10,9 +10,9 @@ This log documents security risks and mitigations for the academic prototype.
 | Oversized or malformed JSON | Large payloads or bad content could degrade service or cause unsafe errors. | Canonical middleware enforces JSON content handling, 1 MiB limit, and typed errors for `/api/v1`. | Legacy compatibility routes are temporary migration surface. |
 | Unsafe exception disclosure | Stack traces could reveal internals. | API maps known failures to stable safe envelopes. | Need full production error policy before deployment. |
 | Dependency drift | Unpinned packages can make demo unreproducible or vulnerable. | `pyproject.toml`, `uv.lock`, and Docker pinned runtime dependencies. | Need routine vulnerability scanning for public hosting. |
-| Database corruption/loss during migrations | Failed migration could lose evidence. | Startup runs Alembic fail-closed and creates verified SQLite backups for existing databases. | Backup retention/export policy remains academic, not production-grade. |
+| Database corruption/loss during migrations | Failed migration could lose evidence. | Startup runs Alembic fail-closed and creates verified SQLite backups for existing databases. | Backup retention/export policy remains MVP-level, not production-grade. |
 | External frontend assets | CDN fonts/icons can fail or leak request metadata. | Acceptable for prototype demo. | Vendoring assets is recommended for fully offline/public evidence. |
 
 ## Security Posture
 
-Smart Dispatch IA is a local educational prototype. It should not be presented as production-ready. The correct claim is that security risks were identified, mitigated where reasonable for the course scope, and documented as limitations for future work.
+Smart Dispatch IA is a scoped MVP. It should not be presented as enterprise production-ready. The correct claim is that security risks were identified, mitigated where reasonable for the current scope, and documented as limitations for future work.

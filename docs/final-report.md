@@ -14,7 +14,7 @@ Nota de hosting: la aplicacion publicada usa Render Free. Si la instancia estuvo
 
 ## 1. Resumen Ejecutivo
 
-Smart Dispatch IA es un prototipo educativo de asistencia al despacho tecnico en servicios de campo. El proyecto toma una idea conceptual de medio ciclo, basada en agentes especializados y memoria persistente, y la transforma en una aplicacion real, publicada, ejecutable por Docker y documentada para evaluacion.
+Smart Dispatch IA es un prototipo funcional de asistencia al despacho tecnico en servicios de campo. El proyecto convierte un modelo conceptual de orquestacion agentica y memoria persistente en una aplicacion web publicada, ejecutable con Docker y documentada con evidencia tecnica reproducible.
 
 El sistema ayuda a decidir que tecnico conviene asignar a una orden de trabajo. Para hacerlo, separa el problema en etapas: captura de informacion, analisis de requerimientos, planificacion, evaluacion de restricciones, scoring, confianza y aprendizaje. La aplicacion no reemplaza al despachador: funciona como soporte a la decision y conserva evidencia de por que se recomienda un tecnico.
 
@@ -45,7 +45,7 @@ Objetivos concretos:
 
 ## 4. Evolucion Desde El Trabajo De Medio Ciclo
 
-El trabajo de medio ciclo presentaba una propuesta conceptual con cinco agentes: Captura, Analizador, Planificador, Evaluador y Aprendizaje. El feedback docente senalo que la idea era coherente, pero que faltaba formalizar los mecanismos internos clave.
+La version conceptual inicial presentaba una propuesta con cinco agentes: Captura, Analizador, Planificador, Evaluador y Aprendizaje. La revision tecnica posterior senalo que la idea era coherente, pero que faltaba formalizar los mecanismos internos clave.
 
 Principales mejoras realizadas:
 
@@ -61,7 +61,7 @@ Principales mejoras realizadas:
 
 ## 5. Arquitectura General
 
-La arquitectura objetivo es un monolito modular hexagonal con pipeline deterministico. Se eligio monorepo porque el proyecto es academico, el frontend es estatico y FastAPI puede servir API y UI desde el mismo proceso. Esto reduce friccion para el docente: un repositorio, un README y un comando Docker.
+La arquitectura objetivo es un monolito modular hexagonal con pipeline deterministico. Se eligio monorepo porque el frontend es estatico y FastAPI puede servir API y UI desde el mismo proceso. Esto reduce friccion operativa: un repositorio, un README, un comando Docker y una ruta clara de despliegue.
 
 Componentes principales:
 
@@ -133,7 +133,7 @@ Cada componente se normaliza entre 0 y 100. Los calculos autoritativos usan `Dec
 
 ## 8. Memoria Persistente Y Datos
 
-El sistema utiliza datos semilla reproducibles y persistencia SQLite. No se implemento login ni panel de administracion porque el alcance de la entrega es un MVP academico de un solo usuario. La decision se documenta como limite y no como omision accidental.
+El sistema utiliza datos semilla reproducibles y persistencia SQLite. No se implemento login ni panel de administracion porque el alcance actual es un MVP de un solo usuario. La decision se documenta como limite y no como omision accidental.
 
 Estrategia de datos:
 
@@ -163,7 +163,7 @@ Alembic se usa para estructura de base de datos, no para contenido demo. Esto ma
 | Pydantic v2 | Validacion | Modelos estrictos y rechazo de campos desconocidos. |
 | SQLAlchemy Core | Persistencia | SQL explicito sin acoplar dominio a ORM. |
 | Alembic | Migraciones | Control de evolucion del esquema SQLite. |
-| SQLite | Base local | Suficiente para demo academica single-user. |
+| SQLite | Base local | Suficiente para un MVP single-user y despliegues livianos. |
 | HTML/CSS/JS vanilla | Frontend | Interfaz simple, auditable y sin build complejo. |
 | Docker / Compose | Ejecucion | Reproducibilidad local y deploy con Dockerfile. |
 | Render Free | Publicacion | Permite link publico evaluable. |
@@ -243,7 +243,7 @@ Resumen:
 | Consistencia | Buena: paneles y estados tienen estilo uniforme. |
 | Prevencion de errores | Media: backend valida mas que la UI. |
 | Reconocimiento antes que memoria | Buena: ordenes y tecnicos estan visibles. |
-| Flexibilidad | Media: faltan botones directos para escenarios academicos. |
+| Flexibilidad | Media: faltan botones directos para escenarios operativos. |
 | Diseno minimalista | Medio: visualmente claro, aunque algunas trazas ocupan mucho espacio. |
 | Recuperacion de errores | Media: la API tiene errores tipados, la UI debe mostrarlos mejor. |
 | Ayuda/documentacion | Buena: README, runbook y docs de entrega. |
@@ -265,7 +265,7 @@ Riesgos y mitigaciones:
 | Riesgo | Mitigacion actual |
 | --- | --- |
 | Exposicion accidental | Default local `127.0.0.1`; Docker/deploy explicitamente configurados. |
-| Falta de autenticacion | Declarado fuera de alcance productivo; MVP academico single-user. |
+| Falta de autenticacion | Declarado fuera de alcance productivo; MVP single-user. |
 | Datos sensibles | Se evita loguear direcciones completas o GPS exacto en evidencia estructurada futura. |
 | Payloads malformados | Middleware canonico con limite 1 MiB y errores tipados en `/api/v1`. |
 | Excepciones inseguras | Mapeo a respuestas seguras para errores conocidos. |
@@ -273,7 +273,7 @@ Riesgos y mitigaciones:
 | Migraciones fallidas | Startup fail-closed y backup SQLite para DB existente. |
 | Assets externos | Identificado como limite; se recomienda vendorizacion futura. |
 
-El sistema no se presenta como produccion. La postura correcta es: prototipo educativo publicado, con riesgos identificados y mitigaciones razonables para el alcance.
+El sistema no se presenta como produccion enterprise. La postura correcta es: MVP publicado, con riesgos identificados y mitigaciones razonables para el alcance.
 
 ## 14. Uso De IA En Co-Work
 
@@ -281,11 +281,11 @@ La IA se uso como colaborador durante el proceso, no como sustituto de criterio 
 
 Usos principales:
 
-- Interpretar feedback docente y convertirlo en tareas implementables.
+- Interpretar feedback tecnico y convertirlo en tareas implementables.
 - Crear PRD, arquitectura, epicas e historias con BMad.
 - Implementar contratos, politicas, persistencia y pruebas.
 - Dockerizar la aplicacion.
-- Preparar documentacion academica y evidencia.
+- Preparar documentacion tecnica, evidencia y artefactos de revision.
 - Comparar opciones de deploy y publicacion.
 
 Errores o limites observados:
@@ -348,7 +348,7 @@ Limitacion del hosting gratuito:
 - La primera request puede demorar 50 segundos o mas.
 - La persistencia runtime en hosting gratuito puede ser efimera.
 
-Esto no invalida la entrega, porque el proyecto conserva seeds reproducibles y Docker local como respaldo.
+Esto no invalida la publicacion del MVP, porque el proyecto conserva seeds reproducibles y Docker local como respaldo.
 
 ## 17. Limitaciones Del MVP
 
@@ -364,23 +364,25 @@ Limitaciones intencionales:
 
 Estas limitaciones son coherentes con el objetivo: demostrar orquestacion, memoria persistente, explicabilidad y publicacion de un prototipo funcional.
 
-## 18. Proximos Pasos
+## 18. Roadmap Recomendado
 
 Prioridades futuras:
 
-1. Mostrar en frontend los `DispatchRun` canonicos de `/api/v1`.
-2. Implementar decision humana y outcome completo sobre la API canonica.
-3. Completar memoria episodica y promocion semantica.
-4. Agregar escenarios comparativos con memoria on/off.
-5. Exportar paquete academico automatico.
-6. Mejorar accesibilidad WCAG.
-7. Agregar autenticacion si se convierte en app multiusuario.
-8. Evaluar Ollama como adaptador local de ANALYZE.
+1. Agregar una demo guiada dentro de la interfaz: reset de escenario, seleccion de orden, despacho, aprobacion y cierre de servicio en un recorrido visible.
+2. Mostrar reglas duras por tecnico antes del score: disponibilidad, certificaciones, turno, carga maxima, limite de conduccion y EPP requerido.
+3. Separar visualmente score objetivo y confianza de recomendacion para evitar que el usuario confunda calidad de asignacion con calidad de evidencia.
+4. Agregar un escenario `NO_FEASIBLE_CANDIDATES` donde ningun tecnico cumpla las restricciones, mostrando razones de descarte sin forzar recomendacion.
+5. Mostrar en frontend los `DispatchRun` canonicos de `/api/v1`, incluyendo estados `CAPTURE`, `ANALYZE`, `PLAN`, `EVALUATE` y `WAIT_FOR_DECISION`.
+6. Implementar decision humana y outcome completo sobre la API canonica para reemplazar gradualmente las rutas legacy de la UI.
+7. Completar memoria episodica y promocion semantica con escenarios comparativos memoria on/off.
+8. Mejorar accesibilidad WCAG: foco visible, labels semanticos, navegacion por teclado y mensajes de error legibles.
+9. Evaluar Ollama como adaptador local opcional de `ANALYZE`, manteniendo validacion Pydantic y reglas deterministicas.
+10. Agregar autenticacion solo si el sistema evoluciona a uso multiusuario.
 
 ## 19. Conclusiones
 
-Smart Dispatch IA cumple el objetivo central de la entrega final: la idea conceptual evoluciono a una aplicacion real, publicada, ejecutable y documentada. El sistema ya no depende solo de una narrativa sobre agentes; ahora presenta una arquitectura tecnica con orquestacion deterministica, reglas duras, scoring, confianza, persistencia, pruebas, Docker, repositorio publico y evidencia de uso.
+Smart Dispatch IA consolida una idea conceptual en una aplicacion real, publicada, ejecutable y documentada. El sistema ya no depende solo de una narrativa sobre agentes; ahora presenta una arquitectura tecnica con orquestacion deterministica, reglas duras, scoring, confianza, persistencia, pruebas, Docker, repositorio publico y evidencia de uso.
 
 El aporte principal es mostrar como un sistema "agentico" puede mantenerse controlado. Los agentes producen evidencia, pero no gobiernan el estado. La memoria puede informar decisiones, pero no reemplaza restricciones de seguridad. La IA puede colaborar en el analisis, pero la aplicacion conserva mecanismos deterministas para que el resultado sea auditable.
 
-Para el alcance academico, el proyecto demuestra suficiente madurez tecnica y conceptual: existe, funciona, esta publicado y deja una ruta clara de evolucion hacia un sistema mas completo.
+Para su alcance actual, el proyecto demuestra madurez tecnica y conceptual: existe, funciona, esta publicado y deja una ruta clara de evolucion hacia un sistema mas completo.

@@ -8,7 +8,7 @@ of scope, and where to look before changing anything.
 
 ## Project Summary
 
-Smart Dispatch IA is an educational prototype for deterministic, auditable
+Smart Dispatch IA is a functional prototype for deterministic, auditable
 field-service dispatch. It demonstrates cyclic agentic orchestration and
 persistent memory through a real web application.
 
@@ -141,7 +141,7 @@ Important directories:
 - `app/adapters/persistence/`: SQLite repositories and unit of work.
 - `app/migrations/`: Alembic runtime schema.
 - `data/seeds/`: demo technicians and orders.
-- `docs/`: academic report, evidence, runbook, and status.
+- `docs/`: report, evidence, runbook, and status.
 - `tools/`: helper tooling, including PDF generation.
 
 ## Data Loading
@@ -200,13 +200,16 @@ Do not treat these as accidental omissions. They are documented MVP boundaries.
 
 Only do these if the user asks for more after the final delivery:
 
-1. Add a small in-app "teacher demo" flow with one-click scenario reset.
-2. Surface canonical `DispatchRun` state transitions in the frontend.
-3. Show hard-constraint pass/fail evidence before score.
-4. Separate objective score and confidence visually.
-5. Add a no-feasible-candidates demo scenario.
-6. Add optional Ollama adapter for the `ANALYZE` stage.
-7. Add authentication only if the project becomes multi-user.
+1. Add a guided in-app demo flow with scenario reset, work-order selection, dispatch, approval, and service completion.
+2. Show hard-constraint pass/fail evidence before score for every technician.
+3. Separate objective score and recommendation confidence visually.
+4. Add a `NO_FEASIBLE_CANDIDATES` scenario with rejection reasons and no forced recommendation.
+5. Surface canonical `DispatchRun` state transitions in the frontend.
+6. Implement human decision and outcome commands on the canonical `/api/v1` flow.
+7. Complete episodic memory and semantic promotion with memory on/off comparison scenarios.
+8. Improve accessibility with visible focus, semantic labels, keyboard navigation, and readable errors.
+9. Add optional Ollama adapter for the `ANALYZE` stage.
+10. Add authentication only if the product becomes multi-user.
 
 ## Agent Rules
 
@@ -216,4 +219,4 @@ Only do these if the user asks for more after the final delivery:
 - Preserve public links, report files, screenshots, seeds, and logs.
 - Do not replace FastAPI/vanilla frontend with another stack.
 - Do not remove legacy routes until the UI fully migrates to `/api/v1`.
-- Do not claim production readiness; this is an academic MVP.
+- Do not claim enterprise production readiness; this is a scoped MVP.

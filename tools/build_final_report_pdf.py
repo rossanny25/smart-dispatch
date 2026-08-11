@@ -243,11 +243,11 @@ def build_story(styles):
             styles,
         )
     )
-    story.append(h1("Checklist de entrega", styles))
+    story.append(h1("Checklist de validacion", styles))
     story.append(
         table(
             [
-                ["Requisito docente", "Estado", "Evidencia"],
+                ["Requisito del proyecto", "Estado", "Evidencia"],
                 ["Aplicacion real funcionando", "Cumplido", "Demo en Render y Docker local"],
                 ["Links en primera pagina", "Cumplido", "Tabla inicial"],
                 ["Arquitectura y UML", "Cumplido", "Diagramas incluidos"],
@@ -265,7 +265,7 @@ def build_story(styles):
     story.append(h1("1. Resumen ejecutivo", styles))
     story.append(
         p(
-            "Smart Dispatch IA es un prototipo educativo de asistencia al despacho tecnico en servicios de campo. El proyecto toma una idea conceptual de medio ciclo, basada en agentes especializados y memoria persistente, y la convierte en una aplicacion real, publicada, ejecutable con Docker y documentada para evaluacion academica.",
+            "Smart Dispatch IA es un prototipo funcional de asistencia al despacho tecnico en servicios de campo. El proyecto convierte un modelo conceptual de orquestacion agentica y memoria persistente en una aplicacion web publicada, ejecutable con Docker y documentada con evidencia tecnica reproducible.",
             styles,
         )
     )
@@ -317,7 +317,7 @@ def build_story(styles):
     story.append(h1("4. Arquitectura general", styles))
     story.append(
         p(
-            "La arquitectura objetivo es un monolito modular hexagonal con pipeline deterministico. Se eligio monorepo porque el proyecto es academico, el frontend es estatico y FastAPI puede servir API y UI desde el mismo proceso. Esto reduce friccion para la evaluacion: un repositorio, un README y un comando Docker.",
+            "La arquitectura objetivo es un monolito modular hexagonal con pipeline deterministico. Se eligio monorepo porque el frontend es estatico y FastAPI puede servir API y UI desde el mismo proceso. Esto reduce friccion operativa: un repositorio, un README, un comando Docker y una ruta clara de despliegue.",
             styles,
         )
     )
@@ -340,7 +340,7 @@ def build_story(styles):
     story.append(h1("5. Orquestacion agentica ciclica", styles))
     story.append(
         p(
-            "El sistema modela el ciclo de despacho como una secuencia de estados. La pieza central es DispatchOrchestrator: los agentes no pueden avanzar estados por su cuenta. Esto responde al feedback docente porque reemplaza el orquestador ambiguo por un mecanismo auditable.",
+            "El sistema modela el ciclo de despacho como una secuencia de estados. La pieza central es DispatchOrchestrator: los agentes no pueden avanzar estados por su cuenta. Esto reemplaza el orquestador ambiguo por un mecanismo auditable.",
             styles,
         )
     )
@@ -379,7 +379,7 @@ def build_story(styles):
                 ["Pydantic v2", "Validacion", "Modelos estrictos y rechazo de campos desconocidos."],
                 ["SQLAlchemy Core", "Persistencia", "SQL explicito sin acoplar dominio a ORM."],
                 ["Alembic", "Migraciones", "Control de evolucion del esquema SQLite."],
-                ["SQLite", "Base local", "Suficiente para demo academica single-user."],
+                ["SQLite", "Base local", "Suficiente para un MVP single-user y despliegues livianos."],
                 ["HTML/CSS/JS", "Frontend", "Interfaz simple, auditable y sin build complejo."],
                 ["Docker/Compose", "Ejecucion", "Reproducibilidad local y deploy con Dockerfile."],
                 ["Render Free", "Publicacion", "Link publico evaluable."],
@@ -408,14 +408,14 @@ def build_story(styles):
                 "Memoria inicial: data/learning_store.json.",
                 "Runtime SQLite local: data/smart_dispatch.db.",
                 "Runtime Docker: volumen smart_dispatch_data.",
-                "Reset academico: POST /api/reset o docker compose down -v.",
+                "Reset operativo: POST /api/reset o docker compose down -v.",
             ],
             styles,
         )
     )
     story.append(
         p(
-            "No se implemento login ni panel de administracion porque el alcance de la entrega es un MVP academico de un solo usuario. La carga de informacion se realiza por seeds JSON versionados y por el flujo de aprendizaje del simulador.",
+            "No se implemento login ni panel de administracion porque el alcance actual es un MVP de un solo usuario. La carga de informacion se realiza por seeds JSON versionados y por el flujo de aprendizaje del simulador.",
             styles,
         )
     )
@@ -492,7 +492,7 @@ def build_story(styles):
             [
                 ["Riesgo", "Mitigacion actual", "Pendiente"],
                 ["Exposicion accidental", "Default local 127.0.0.1; Docker explicito en 8050.", "Auth, HTTPS y politicas de red."],
-                ["Falta de autenticacion", "Demo academica single-user.", "Agregar auth antes de uso real."],
+                ["Falta de autenticacion", "MVP single-user.", "Agregar auth antes de uso multiusuario o productivo."],
                 ["Datos sensibles", "Evidencia demo y recomendacion por zona.", "Politica para datos reales."],
                 ["JSON malformado/grande", "/api/v1 limita 1 MiB y usa errores tipados.", "Migrar rutas legacy restantes."],
                 ["Excepciones inseguras", "Errores conocidos se mapean a respuestas estables.", "Politica productiva completa."],
@@ -508,11 +508,11 @@ def build_story(styles):
     story.append(
         bullet(
             [
-                "Interpretar feedback docente y convertirlo en tareas implementables.",
+                "Interpretar feedback tecnico y convertirlo en tareas implementables.",
                 "Crear PRD, arquitectura, epicas e historias con BMad.",
                 "Implementar contratos, politicas, persistencia y pruebas.",
                 "Dockerizar la aplicacion.",
-                "Preparar documentacion academica y evidencia.",
+                "Preparar documentacion tecnica, evidencia y artefactos de revision.",
                 "Comparar opciones de deploy y publicacion.",
             ],
             styles,
@@ -545,7 +545,7 @@ def build_story(styles):
     )
     story.append(PageBreak())
 
-    story.append(h1("15. Despliegue, limitaciones y conclusiones", styles))
+    story.append(h1("15. Despliegue, roadmap y conclusiones", styles))
     story.append(
         p(
             "La aplicacion esta publicada en https://smart-dispatch-q4xk.onrender.com y el repositorio esta en https://github.com/rossanny25/smart-dispatch. Localmente se ejecuta con docker compose up --build y se abre en http://127.0.0.1:8050.",
@@ -568,7 +568,13 @@ def build_story(styles):
     )
     story.append(
         p(
-            "Smart Dispatch IA cumple el objetivo central de la entrega final: la idea conceptual evoluciono a una aplicacion real, publicada, ejecutable y documentada. El sistema presenta orquestacion deterministica, reglas duras, scoring, confianza, persistencia, pruebas, Docker, repositorio publico y evidencia de uso.",
+            "Roadmap recomendado: demo guiada dentro de la interfaz; reglas duras visibles por tecnico antes del score; score objetivo y confianza separados; escenario NO_FEASIBLE_CANDIDATES sin recomendacion forzada; estados canonicos DispatchRun visibles en frontend; decision humana y outcome sobre /api/v1; memoria episodica con comparativas memoria on/off; accesibilidad WCAG; Ollama como adaptador local opcional; autenticacion solo si evoluciona a uso multiusuario.",
+            styles,
+        )
+    )
+    story.append(
+        p(
+            "Smart Dispatch IA consolida una idea conceptual en una aplicacion real, publicada, ejecutable y documentada. El sistema presenta orquestacion deterministica, reglas duras, scoring, confianza, persistencia, pruebas, Docker, repositorio publico y evidencia de uso.",
             styles,
         )
     )

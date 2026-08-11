@@ -41,7 +41,7 @@ uv run python3 server.py
 
 ## Docker launch on port 8050
 
-The project can also run as a containerized course demo:
+The project can also run as a containerized local demo:
 
 ```bash
 docker compose up --build
@@ -103,11 +103,11 @@ This slice captures only schema-valid raw input. Dispatch analysis, derived
 requirements, recommendations, and browser migration belong to later stories,
 so the current SPA continues to use the compatibility API.
 
-This course MVP is local-only. Authentication, HTTPS termination, multi-user
+This MVP is local-first. Authentication, HTTPS termination, multi-user
 operation, and production deployment are intentionally outside its current
 scope.
 
-For the final course delivery checklist, see
+For the final delivery checklist, see
 [`docs/final-delivery-guide.md`](docs/final-delivery-guide.md).
 
 For the self-contained Markdown report with links, diagrams, screenshots, and

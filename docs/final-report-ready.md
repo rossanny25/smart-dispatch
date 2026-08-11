@@ -12,9 +12,9 @@
 
 Nota: la aplicacion publicada usa Render Free. Si la instancia estuvo inactiva, la primera carga puede demorar cerca de 50 segundos o mas mientras el servicio despierta.
 
-## Checklist de entrega
+## Checklist de validacion
 
-| Requisito docente | Estado | Evidencia |
+| Requisito del proyecto | Estado | Evidencia |
 | --- | --- | --- |
 | Aplicacion real funcionando | Cumplido | Demo en Render y Docker local |
 | Link vivo en la primera pagina | Cumplido | Tabla inicial |
@@ -31,7 +31,7 @@ Nota: la aplicacion publicada usa Render Free. Si la instancia estuvo inactiva, 
 
 ## 1. Resumen ejecutivo
 
-Smart Dispatch IA es un prototipo educativo de asistencia al despacho tecnico en servicios de campo. El proyecto toma una idea conceptual de medio ciclo, basada en agentes especializados y memoria persistente, y la convierte en una aplicacion real, publicada, ejecutable con Docker y documentada para evaluacion academica.
+Smart Dispatch IA es un prototipo funcional de asistencia al despacho tecnico en servicios de campo. El proyecto convierte un modelo conceptual de orquestacion agentica y memoria persistente en una aplicacion web publicada, ejecutable con Docker y documentada con evidencia tecnica reproducible.
 
 El sistema ayuda a decidir que tecnico conviene asignar a una orden de trabajo. Para hacerlo, separa el problema en etapas: captura de informacion, analisis de requerimientos, planificacion, evaluacion de restricciones, scoring, confianza y aprendizaje. La aplicacion no reemplaza al despachador: funciona como soporte a la decision y conserva evidencia de por que se recomienda un tecnico.
 
@@ -47,7 +47,7 @@ Por eso el sistema se plantea como una ayuda inteligente pero controlada: primer
 
 ## 3. Evolucion desde el trabajo de medio ciclo
 
-El trabajo de medio ciclo presentaba una propuesta conceptual con cinco agentes: Captura, Analizador, Planificador, Evaluador y Aprendizaje. El feedback docente senalo que la idea era coherente, pero que faltaba formalizar los mecanismos internos clave.
+La version conceptual inicial presentaba una propuesta con cinco agentes: Captura, Analizador, Planificador, Evaluador y Aprendizaje. La revision tecnica posterior senalo que la idea era coherente, pero que faltaba formalizar los mecanismos internos clave.
 
 | Observacion del feedback | Evolucion implementada |
 | --- | --- |
@@ -61,7 +61,7 @@ El trabajo de medio ciclo presentaba una propuesta conceptual con cinco agentes:
 
 ## 4. Arquitectura general
 
-La arquitectura objetivo es un monolito modular hexagonal con pipeline deterministico. Se eligio monorepo porque el proyecto es academico, el frontend es estatico y FastAPI puede servir API y UI desde el mismo proceso. Esto reduce friccion para la evaluacion: un repositorio, un README y un comando Docker.
+La arquitectura objetivo es un monolito modular hexagonal con pipeline deterministico. Se eligio monorepo porque el frontend es estatico y FastAPI puede servir API y UI desde el mismo proceso. Esto reduce friccion operativa: un repositorio, un README, un comando Docker y una ruta clara de despliegue.
 
 Componentes principales:
 
@@ -76,7 +76,7 @@ Componentes principales:
 
 ```mermaid
 flowchart LR
-  User["Despachador / evaluador"] --> Browser["Browser UI<br/>HTML CSS JS"]
+  User["Despachador / operador"] --> Browser["Browser UI<br/>HTML CSS JS"]
   Browser --> API["FastAPI HTTP Adapter<br/>/api/v1 y legacy /api"]
   API --> Commands["Application Commands"]
   Commands --> Orchestrator["DispatchOrchestrator<br/>dueno del estado"]
@@ -216,7 +216,7 @@ classDiagram
 | Pydantic v2 | Validacion | Modelos estrictos y rechazo de campos desconocidos. |
 | SQLAlchemy Core | Persistencia | SQL explicito sin acoplar dominio a ORM. |
 | Alembic | Migraciones | Control de evolucion del esquema SQLite. |
-| SQLite | Base local | Suficiente para demo academica single-user. |
+| SQLite | Base local | Suficiente para un MVP single-user y despliegues livianos. |
 | HTML/CSS/JS vanilla | Frontend | Interfaz simple, auditable y sin build complejo. |
 | Docker / Compose | Ejecucion | Reproducibilidad local y deploy con Dockerfile. |
 | Render Free | Publicacion | Permite link publico evaluable. |
@@ -254,9 +254,9 @@ Memoria y datos:
 - Memoria inicial: `data/learning_store.json`.
 - Runtime SQLite local: `data/smart_dispatch.db`.
 - Runtime Docker: volumen `smart_dispatch_data`.
-- Reset academico rapido: `POST /api/reset` o `docker compose down -v`.
+- Reset operativo rapido: `POST /api/reset` o `docker compose down -v`.
 
-No se implemento login ni panel de administracion porque el alcance de la entrega es un MVP academico de un solo usuario. La carga de informacion se realiza por seeds JSON versionados y por el flujo de aprendizaje del simulador.
+No se implemento login ni panel de administracion porque el alcance actual es un MVP de un solo usuario. La carga de informacion se realiza por seeds JSON versionados y por el flujo de aprendizaje del simulador.
 
 ## 9. Capturas del frontend
 
@@ -327,7 +327,7 @@ Archivos de evidencia:
 
 ## 11. Autoevaluacion UX/UI con Nielsen
 
-Publico objetivo: despachador de servicios de campo o evaluador academico que necesita entender rapidamente una recomendacion de despacho.
+Publico objetivo: despachador de servicios de campo, supervisor operativo o revisor tecnico que necesita entender rapidamente una recomendacion de despacho.
 
 | Heuristica | Evaluacion | Mejora |
 | --- | --- | --- |
@@ -337,19 +337,19 @@ Publico objetivo: despachador de servicios de campo o evaluador academico que ne
 | Consistencia | Buena: paneles y estados tienen estilo uniforme. | Unificar errores API en frontend. |
 | Prevencion de errores | Media: backend valida mas que UI. | Validar antes de enviar. |
 | Reconocimiento antes que memoria | Buena: ordenes y tecnicos estan visibles. | Mantener contexto seleccionado durante todo el flujo. |
-| Flexibilidad | Media: flujo simple para demo. | Agregar botones de escenarios academicos. |
+| Flexibilidad | Media: flujo simple para demo. | Agregar botones de escenarios operativos. |
 | Diseno minimalista | Medio: claro, aunque algunas trazas ocupan espacio. | Priorizar evidencia operacional. |
 | Recuperacion de errores | Media: API tiene errores tipados. | Mostrar retry y explicacion no factible. |
 | Ayuda/documentacion | Buena: README, runbook e informe. | Agregar panel breve dentro de la app. |
 
-Conclusion UX: la interfaz es suficiente para demostrar el MVP academico. Su siguiente mejora deberia ser hacer mas visibles las reglas duras, la confianza y el estado canonico del ciclo agentico.
+Conclusion UX: la interfaz es suficiente para operar el MVP. Su siguiente mejora deberia ser hacer mas visibles las reglas duras, la confianza y el estado canonico del ciclo agentico.
 
 ## 12. Log de ciberseguridad
 
 | Riesgo | Impacto | Mitigacion actual | Limitacion pendiente |
 | --- | --- | --- | --- |
 | Exposicion accidental | Acceso no deseado al prototipo. | Default local `127.0.0.1`; Docker explicito en `8050`. | Produccion requiere auth, HTTPS y politicas de red. |
-| Falta de autenticacion | Cualquier usuario con acceso al puerto podria operar. | Declarado como demo academica single-user. | Agregar auth antes de uso real. |
+| Falta de autenticacion | Cualquier usuario con acceso al puerto podria operar. | Declarado como MVP single-user. | Agregar auth antes de uso multiusuario o productivo. |
 | Datos sensibles | Direcciones/GPS podrian exponer privacidad. | Evidencia demo y recomendacion de memoria por zona. | Politica formal para datos reales. |
 | JSON malformado o grande | Degradacion o errores inseguros. | `/api/v1` limita 1 MiB y usa errores tipados. | Migrar rutas legacy restantes. |
 | Excepciones inseguras | Fuga de detalles internos. | Errores conocidos se mapean a respuestas estables. | Politica completa de errores productivos. |
@@ -357,7 +357,7 @@ Conclusion UX: la interfaz es suficiente para demostrar el MVP academico. Su sig
 | Migraciones fallidas | Perdida de evidencia local. | Startup fail-closed y backups SQLite. | Retencion/exportacion productiva. |
 | Assets externos | Fallos offline o metadata externa. | Aceptable en prototipo. | Vendorizacion futura. |
 
-Postura de seguridad: Smart Dispatch IA es un prototipo educativo publicado. No se presenta como sistema productivo, pero identifica riesgos y aplica mitigaciones razonables para su alcance.
+Postura de seguridad: Smart Dispatch IA es un MVP publicado. No se presenta como sistema productivo enterprise, pero identifica riesgos y aplica mitigaciones razonables para su alcance actual.
 
 ## 13. Uso de IA en co-work
 
@@ -365,11 +365,11 @@ La IA se uso como colaborador durante el proceso, no como sustituto de criterio 
 
 Usos principales:
 
-- Interpretar feedback docente y convertirlo en tareas implementables.
+- Interpretar feedback tecnico y convertirlo en tareas implementables.
 - Crear PRD, arquitectura, epicas e historias con BMad.
 - Implementar contratos, politicas, persistencia y pruebas.
 - Dockerizar la aplicacion.
-- Preparar documentacion academica y evidencia.
+- Preparar documentacion tecnica, evidencia y artefactos de revision.
 - Comparar opciones de deploy y publicacion.
 
 Fallos o limites observados:
@@ -383,7 +383,7 @@ Sorpresas positivas:
 
 - Fue util para convertir un feedback conceptual en cambios concretos.
 - Ayudo a mantener trazabilidad entre especificacion, implementacion, pruebas y evidencia.
-- Acelero la produccion de documentacion tecnica sin perder el foco academico.
+- Acelero la produccion de documentacion tecnica sin perder trazabilidad entre decisiones, codigo y evidencia.
 
 ## 14. Reflexion sobre integracion de LLM o SLM local
 
@@ -450,7 +450,7 @@ Limitacion del hosting gratuito:
 - La primera request puede demorar 50 segundos o mas.
 - La persistencia runtime en hosting gratuito puede ser efimera.
 
-Esto no invalida la entrega porque el proyecto conserva seeds reproducibles y Docker local como respaldo.
+Esto no invalida la publicacion del MVP porque el proyecto conserva seeds reproducibles y Docker local como respaldo.
 
 ## 16. Limitaciones del MVP
 
@@ -466,21 +466,23 @@ Limitaciones intencionales:
 
 Estas limitaciones son coherentes con el objetivo: demostrar orquestacion, memoria persistente, explicabilidad y publicacion de un prototipo funcional.
 
-## 17. Proximos pasos
+## 17. Roadmap recomendado
 
-1. Mostrar en frontend los `DispatchRun` canonicos de `/api/v1`.
-2. Implementar decision humana y outcome completo sobre la API canonica.
-3. Completar memoria episodica y promocion semantica.
-4. Agregar escenarios comparativos con memoria on/off.
-5. Exportar paquete academico automatico.
-6. Mejorar accesibilidad WCAG.
-7. Agregar autenticacion si se convierte en app multiusuario.
-8. Evaluar Ollama como adaptador local de `ANALYZE`.
+1. Agregar una demo guiada dentro de la interfaz: reset de escenario, seleccion de orden, despacho, aprobacion y cierre de servicio en un recorrido visible.
+2. Mostrar reglas duras por tecnico antes del score: disponibilidad, certificaciones, turno, carga maxima, limite de conduccion y EPP requerido.
+3. Separar visualmente score objetivo y confianza de recomendacion para evitar que el usuario confunda calidad de asignacion con calidad de evidencia.
+4. Agregar un escenario `NO_FEASIBLE_CANDIDATES` donde ningun tecnico cumpla las restricciones, mostrando razones de descarte sin forzar recomendacion.
+5. Mostrar en frontend los `DispatchRun` canonicos de `/api/v1`, incluyendo estados `CAPTURE`, `ANALYZE`, `PLAN`, `EVALUATE` y `WAIT_FOR_DECISION`.
+6. Implementar decision humana y outcome completo sobre la API canonica para reemplazar gradualmente las rutas legacy de la UI.
+7. Completar memoria episodica y promocion semantica con escenarios comparativos memoria on/off.
+8. Mejorar accesibilidad WCAG: foco visible, labels semanticos, navegacion por teclado y mensajes de error legibles.
+9. Evaluar Ollama como adaptador local opcional de `ANALYZE`, manteniendo validacion Pydantic y reglas deterministicas.
+10. Agregar autenticacion solo si el sistema evoluciona a uso multiusuario.
 
 ## 18. Conclusiones
 
-Smart Dispatch IA cumple el objetivo central de la entrega final: la idea conceptual evoluciono a una aplicacion real, publicada, ejecutable y documentada. El sistema ya no depende solo de una narrativa sobre agentes; ahora presenta una arquitectura tecnica con orquestacion deterministica, reglas duras, scoring, confianza, persistencia, pruebas, Docker, repositorio publico y evidencia de uso.
+Smart Dispatch IA consolida una idea conceptual en una aplicacion real, publicada, ejecutable y documentada. El sistema ya no depende solo de una narrativa sobre agentes; presenta una arquitectura tecnica con orquestacion deterministica, reglas duras, scoring, confianza, persistencia, pruebas, Docker, repositorio publico y evidencia de uso.
 
 El aporte principal es mostrar como un sistema agentico puede mantenerse controlado. Los agentes producen evidencia, pero no gobiernan el estado. La memoria puede informar decisiones, pero no reemplaza restricciones de seguridad. La IA puede colaborar en el analisis, pero la aplicacion conserva mecanismos deterministas para que el resultado sea auditable.
 
-Para el alcance academico, el proyecto demuestra suficiente madurez tecnica y conceptual: existe, funciona, esta publicado y deja una ruta clara de evolucion hacia un sistema mas completo.
+Para su alcance actual, el proyecto demuestra madurez tecnica y conceptual: existe, funciona, esta publicado y deja una ruta clara de evolucion hacia un sistema mas completo.
