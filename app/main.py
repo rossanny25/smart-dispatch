@@ -60,6 +60,10 @@ def create_app(
     application.include_router(create_v1_router(command, dispatch_orchestrator))
     application.include_router(legacy_router)
 
+    @application.get("/healthz", include_in_schema=False)
+    async def healthz() -> dict[str, str]:
+        return {"status": "ok"}
+
     @application.get("/", include_in_schema=False)
     async def index() -> FileResponse:
         return FileResponse(FRONTEND_ROOT / "index.html", media_type="text/html")

@@ -110,6 +110,8 @@ data/seeds/orders.json
 
 For the repository and data-loading rationale, see `docs/repository-and-data-strategy.md`.
 
+For public hosting options, see `docs/deployment-options.md`.
+
 ## Test Commands
 
 Focused runtime and repository checks:
@@ -174,6 +176,13 @@ Use this section as the running implementation log for the final report and proj
 - Updated the legacy FastAPI compatibility adapter to load demo data from seed JSON.
 - Updated `/api/reset` to reload Technicians and Orders from seed files.
 - Added `docs/repository-and-data-strategy.md` to explain monorepo publication and data loading without login/admin.
+
+### 2026-08-11 - Deploy Configuration
+
+- Added `/healthz` for hosting health checks.
+- Runtime now accepts provider `PORT` when `SMART_DISPATCH_PORT` is not set.
+- Added `render.yaml` as a Render Docker blueprint fallback.
+- Added `docs/deployment-options.md` with Koyeb, Render, and GitHub/Docker fallback options.
 
 ## Next Technical Actions
 

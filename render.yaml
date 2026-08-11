@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: smart-dispatch
+    runtime: docker
+    plan: free
+    branch: main
+    healthCheckPath: /healthz
+    envVars:
+      - key: SMART_DISPATCH_HOST
+        value: 0.0.0.0
+      - key: SMART_DISPATCH_DB_PATH
+        value: /app/runtime-data/smart_dispatch.db
+      - key: SMART_DISPATCH_LEARNING_STORE_PATH
+        value: /app/runtime-data/learning_store.runtime.json

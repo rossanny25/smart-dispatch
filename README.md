@@ -102,3 +102,6 @@ For day-to-day startup, shutdown, verification, and technical action notes, see
 
 For the publication layout and data-loading strategy, see
 [`docs/repository-and-data-strategy.md`](docs/repository-and-data-strategy.md).
+
+For free/low-cost deployment options and the Render blueprint fallback, see
+[`docs/deployment-options.md`](docs/deployment-options.md).

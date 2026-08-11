@@ -107,6 +107,7 @@ def test_runtime_prepares_before_starting_uvicorn(monkeypatch: pytest.MonkeyPatc
     events: list[object] = []
     monkeypatch.delenv("SMART_DISPATCH_HOST", raising=False)
     monkeypatch.delenv("SMART_DISPATCH_PORT", raising=False)
+    monkeypatch.delenv("PORT", raising=False)
     monkeypatch.setattr(runtime, "prepare_runtime", lambda: events.append("prepared"))
     monkeypatch.setattr(
         runtime.uvicorn,
@@ -122,6 +123,34 @@ def test_runtime_prepares_before_starting_uvicorn(monkeypatch: pytest.MonkeyPatc
             "uvicorn",
             ("app.main:app",),
             {"host": "127.0.0.1", "port": 8000, "workers": 1},
+        ),
+    ]
+
+
+def test_runtime_accepts_platform_port_when_specific_port_is_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import app.runtime as runtime
+
+    events: list[object] = []
+    monkeypatch.setenv("SMART_DISPATCH_HOST", "0.0.0.0")
+    monkeypatch.delenv("SMART_DISPATCH_PORT", raising=False)
+    monkeypatch.setenv("PORT", "7860")
+    monkeypatch.setattr(runtime, "prepare_runtime", lambda: events.append("prepared"))
+    monkeypatch.setattr(
+        runtime.uvicorn,
+        "run",
+        lambda *args, **kwargs: events.append(("uvicorn", args, kwargs)),
+    )
+
+    runtime.main()
+
+    assert events == [
+        "prepared",
+        (
+            "uvicorn",
+            ("app.main:app",),
+            {"host": "0.0.0.0", "port": 7860, "workers": 1},
         ),
     ]
 

@@ -25,6 +25,7 @@
 - [Cybersecurity Log](./cybersecurity-log.md)
 - [AI Co-Work Log](./ai-cowork-log.md)
 - [Repository And Data Strategy](./repository-and-data-strategy.md)
+- [Deployment Options](./deployment-options.md)
 
 ## Existing Product Documentation
 

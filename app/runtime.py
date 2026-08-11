@@ -14,6 +14,7 @@ PORT = 8000
 WORKERS = 1
 HOST_ENV = "SMART_DISPATCH_HOST"
 PORT_ENV = "SMART_DISPATCH_PORT"
+PLATFORM_PORT_ENV = "PORT"
 
 
 def _resolve_host() -> str:
@@ -21,15 +22,15 @@ def _resolve_host() -> str:
 
 
 def _resolve_port() -> int:
-    selected = os.environ.get(PORT_ENV)
+    selected = os.environ.get(PORT_ENV) or os.environ.get(PLATFORM_PORT_ENV)
     if selected is None:
         return PORT
     try:
         port = int(selected)
     except ValueError as error:
-        raise StartupError("SMART_DISPATCH_PORT must be an integer") from error
+        raise StartupError("runtime port must be an integer") from error
     if not 1 <= port <= 65535:
-        raise StartupError("SMART_DISPATCH_PORT must be between 1 and 65535")
+        raise StartupError("runtime port must be between 1 and 65535")
     return port
 
 
