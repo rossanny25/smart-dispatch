@@ -3,6 +3,11 @@
 Smart Dispatch IA is a local educational simulator for deterministic,
 auditable field-service dispatch.
 
+Live demo: [https://smart-dispatch-q4xk.onrender.com](https://smart-dispatch-q4xk.onrender.com)
+
+The live demo runs on Render Free. If it was inactive, the first request can
+take around 50 seconds or more while the instance wakes up.
+
 ## Requirements
 
 - Python 3.12.10

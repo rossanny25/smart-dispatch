@@ -4,11 +4,13 @@ This guide maps the teacher's final-cycle feedback to concrete project evidence.
 
 ## Required Links For Page 1
 
-- Live app URL: add the deployed URL here after publishing.
-- GitHub repository URL: add the public or shared repository URL here.
+- Live app URL: `https://smart-dispatch-q4xk.onrender.com`
+- GitHub repository URL: `https://github.com/rossanny25/smart-dispatch`
 - Docker/local demo URL: `http://127.0.0.1:8050` after running `docker compose up --build`.
 
 The teacher evaluates the published working project first, so these links must appear on the first page of the final PDF.
+
+Render Free note: the live app can take approximately 50 seconds or more to wake up after inactivity.
 
 ## Evidence To Capture
 

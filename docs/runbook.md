@@ -16,6 +16,14 @@ Open:
 http://127.0.0.1:8050
 ```
 
+Published Render URL:
+
+```text
+https://smart-dispatch-q4xk.onrender.com
+```
+
+Render Free can sleep after inactivity, so the first request can take around 50 seconds or more.
+
 The Compose service publishes container port `8050` to host port `8050`, so it should not collide with a different app already using `8000`.
 
 ## Local Development Startup
@@ -183,6 +191,7 @@ Use this section as the running implementation log for the final report and proj
 - Runtime now accepts provider `PORT` when `SMART_DISPATCH_PORT` is not set.
 - Added `render.yaml` as a Render Docker blueprint fallback.
 - Added `docs/deployment-options.md` with Koyeb, Render, and GitHub/Docker fallback options.
+- Published Render Free service at `https://smart-dispatch-q4xk.onrender.com`.
 
 ## Next Technical Actions
 

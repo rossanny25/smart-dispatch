@@ -6,7 +6,7 @@
 
 | Recurso | Link |
 | --- | --- |
-| Aplicacion en vivo | Pendiente de publicar |
+| Aplicacion en vivo | `https://smart-dispatch-q4xk.onrender.com` |
 | Repositorio GitHub | `https://github.com/rossanny25/smart-dispatch` |
 | Demo Docker local | `http://127.0.0.1:8050` |
 | Guia de ejecucion | `docs/runbook.md` |
@@ -164,6 +164,7 @@ La decision arquitectonica recomendada es mantener deterministica la elegibilida
 Estado actual:
 
 - Aplicacion ejecutable local y por Docker.
+- Aplicacion publicada en Render Free: `https://smart-dispatch-q4xk.onrender.com`.
 - Puerto Docker: `8050`.
 - API y frontend funcionales.
 - Persistencia SQLite y migraciones.
@@ -171,12 +172,10 @@ Estado actual:
 - Documentacion base de entrega.
 - Tests relevantes verificados.
 
+Nota de hosting: Render Free puede suspender la instancia por inactividad. La primera carga despues de un periodo sin uso puede demorar aproximadamente 50 segundos o mas.
+
 Pendiente antes de entregar:
 
-- Publicar repositorio en GitHub.
 - Mantener backend, frontend, Docker, docs, spec y evidencia en un unico monorepo para facilitar la evaluacion.
-- Definir si habra deploy web publico o si GitHub + Docker sera el artefacto publicado.
-- Agregar links reales en la primera pagina.
-- Tomar capturas de pantalla.
 - Exportar este informe a PDF de 10 a 20 paginas.
 - Opcional: incluir captura de Ollama respondiendo una pregunta del proyecto.

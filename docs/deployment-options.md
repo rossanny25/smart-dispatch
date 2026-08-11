@@ -42,6 +42,14 @@ The service uses:
 
 Render injects `PORT`; the application now reads `PORT` when `SMART_DISPATCH_PORT` is absent.
 
+Current live Render URL:
+
+```text
+https://smart-dispatch-q4xk.onrender.com
+```
+
+Free-plan note: the instance can spin down after inactivity. The first request after sleeping can take around 50 seconds or more.
+
 ## Option C: GitHub Only + Docker Local
 
 If a live hosting provider blocks free deployment, the repository itself is still a published runnable artifact:
@@ -71,5 +79,5 @@ Use these fields on the first page:
 | Resource | Link |
 | --- | --- |
 | GitHub repository | `https://github.com/rossanny25/smart-dispatch` |
-| Live app | Add Koyeb/Render URL after deploy |
+| Live app | `https://smart-dispatch-q4xk.onrender.com` |
 | Local Docker fallback | `http://127.0.0.1:8050` |
