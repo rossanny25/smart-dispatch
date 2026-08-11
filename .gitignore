@@ -16,3 +16,6 @@ data/learning_store.runtime.json
 data/learning_store.runtime.json.*
 
 .DS_Store
+
+# Keep the root AI handoff file tracked even if a global gitignore excludes it.
+!AGENTS.md
