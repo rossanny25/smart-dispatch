@@ -105,6 +105,9 @@ For the final course delivery checklist, see
 For the self-contained Markdown report with links, diagrams, screenshots, and
 logs, see [`docs/final-report-ready.md`](docs/final-report-ready.md).
 
+For the PDF version of the final report, see
+[`docs/Smart_Dispatch_IA_Informe_Final.pdf`](docs/Smart_Dispatch_IA_Informe_Final.pdf).
+
 For day-to-day startup, shutdown, verification, and technical action notes, see
 [`docs/runbook.md`](docs/runbook.md).
 
