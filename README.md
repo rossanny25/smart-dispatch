@@ -8,6 +8,14 @@ Live demo: [https://smart-dispatch-q4xk.onrender.com](https://smart-dispatch-q4x
 The live demo runs on Render Free. If it was inactive, the first request can
 take around 50 seconds or more while the instance wakes up.
 
+## For AI agents
+
+Start with [`AGENTS.md`](AGENTS.md), then read
+[`docs/ai-project-status.md`](docs/ai-project-status.md) and
+[`_bmad-output/project-context.md`](_bmad-output/project-context.md).
+Those files explain the current project status, implementation rules, commands,
+known limits, and next safe actions.
+
 ## Requirements
 
 - Python 3.12.10

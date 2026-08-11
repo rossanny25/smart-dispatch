@@ -1,25 +1,63 @@
-# Backlog de Tareas y Fases del Proyecto
+# Backlog De Tareas Y Estado Del Proyecto
 
-Este documento detalla el backlog de desarrollo del proyecto Smart Dispatch IA, estructurado por fases operativas.
+Este documento detalla el estado actual del proyecto Smart Dispatch IA. Fue
+actualizado para reflejar la implementacion real: FastAPI, frontend vanilla,
+Docker, Render y documentacion final academica.
 
 ---
 
-## Fase 1: Diseño Conceptual e Inicialización (Completado)
+## Fase 1: Diseno Conceptual E Inicializacion (Completado)
+
 - [x] Crear e inicializar la estructura básica del repositorio de especificaciones.
 - [x] Redactar los 14 archivos de especificaciones funcionales en `spec/`.
 - [x] Desarrollar y validar los prompts para los 5 agentes en `prompts/`.
 - [x] Crear el archivo de contexto general `docs/CONTEXT.md`.
 
-## Fase 2: Implementación de la Simulación e Interfaz Gráfica (Fase Actual)
-- [ ] Configurar el backend Express en Node.js para simular las respuestas de los agentes.
-- [ ] Crear el motor del orquestador de agentes en el servidor.
-- [ ] Inicializar el frontend SPA utilizando React y Vite.
-- [ ] Diseñar el panel de despacho y el simulador interactivo de frenos/aceleradores.
-- [ ] Implementar la consola visual para ver el paso a paso de los agentes con sus trazas de pensamiento.
-- [ ] Configurar la persistencia local de la memoria en formato JSON.
+## Fase 2: Aplicacion Real Y Demo Ejecutable (Completado)
 
-## Fase 3: Integración de Modelos de Lenguaje y Producción (Fase Futura)
-- [ ] Conectar los prompts a APIs reales de LLM (Gemini/OpenAI) con llaves API opcionales.
-- [ ] Integrar base de datos relacional persistente (SQLite/PostgreSQL) y base de datos vectorial para embeddings de memoria semántica.
-- [ ] Consolidar pruebas de rendimiento y latencia para cumplir con el SLA de respuesta menor a 3 segundos.
-- [ ] Desplegar piloto en producción.
+- [x] Implementar backend Python/FastAPI.
+- [x] Mantener frontend estatico con HTML, CSS y JavaScript vanilla.
+- [x] Implementar rutas legacy `/api/*` para la demo visible.
+- [x] Implementar rutas canonicas `/api/v1/*` para contratos y persistencia.
+- [x] Crear orquestacion deterministica con `DispatchOrchestrator`.
+- [x] Aplicar reglas duras antes del scoring.
+- [x] Separar score objetivo y confianza de recomendacion.
+- [x] Configurar persistencia SQLite con migraciones Alembic.
+- [x] Mover datos demo a seeds JSON versionados.
+- [x] Agregar reset de demo desde seeds.
+- [x] Dockerizar la aplicacion en puerto `8050`.
+- [x] Publicar aplicacion en Render Free.
+- [x] Subir repositorio a GitHub.
+
+## Fase 3: Entrega Final Academica (Completado)
+
+- [x] Agregar README de ejecucion y configuracion.
+- [x] Agregar runbook con acciones tecnicas.
+- [x] Capturar screenshots reales del frontend.
+- [x] Exportar evidencia API y logs Docker.
+- [x] Documentar arquitectura y UML.
+- [x] Documentar tabla de tecnologias con justificacion.
+- [x] Documentar sesion real de uso.
+- [x] Crear autoevaluacion UX/UI con heuristicas de Nielsen.
+- [x] Crear log de ciberseguridad con riesgos y mitigaciones.
+- [x] Documentar uso de IA en co-work.
+- [x] Incluir reflexion sobre LLM/SLM local.
+- [x] Generar informe Markdown final.
+- [x] Generar PDF final con capturas embebidas.
+
+## Fase 4: Handoff Para Agentes IA (Completado)
+
+- [x] Mantener `_bmad-output/project-context.md` como reglas tecnicas profundas.
+- [x] Agregar `AGENTS.md` en la raiz del repositorio.
+- [x] Agregar `docs/ai-project-status.md` como estado vivo del proyecto.
+- [x] Enlazar archivos de contexto desde README e indice de docs.
+
+## Fase 5: Mejoras Futuras Opcionales
+
+- [ ] Mostrar `DispatchRun` canonico de `/api/v1` en el frontend.
+- [ ] Implementar decision humana y outcome completo sobre API canonica.
+- [ ] Agregar escenario explicito de `NO_FEASIBLE_CANDIDATES`.
+- [ ] Separar visualmente score objetivo y confianza en la UI.
+- [ ] Agregar botones directos para escenarios academicos.
+- [ ] Evaluar Ollama como adaptador local opcional de `ANALYZE`.
+- [ ] Agregar autenticacion solo si el proyecto deja de ser single-user.

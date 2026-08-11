@@ -9,6 +9,7 @@
 
 ## Generated Brownfield Documentation
 
+- [AI Project Status](./ai-project-status.md)
 - [Project Overview](./project-overview.md)
 - [Architecture](./architecture.md)
 - [API Contracts](./api-contracts.md)
