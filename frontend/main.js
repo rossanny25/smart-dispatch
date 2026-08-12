@@ -17,6 +17,10 @@ const weatherSelect = document.getElementById('weather-select');
 const trafficSelect = document.getElementById('traffic-select');
 const gpsSelect = document.getElementById('gps-select');
 const btnReset = document.getElementById('btn-reset');
+const btnGuidedDemo = document.getElementById('btn-guided-demo');
+const guidedDemoState = document.getElementById('guided-demo-state');
+const guidedDemoMessage = document.getElementById('guided-demo-message');
+const guidedDemoSteps = document.querySelectorAll('.guided-step');
 
 const ordersList = document.getElementById('orders-list');
 const techniciansGrid = document.getElementById('technicians-grid');
@@ -29,9 +33,17 @@ const detailsAgentTitle = document.getElementById('details-agent-title');
 const detailsJsonOutput = document.getElementById('details-json-output');
 
 const recommendationCard = document.getElementById('recommendation-card');
+const recommendationBox = recommendationCard.querySelector('.recommendation-box');
+const dispatcherActionsBox = recommendationCard.querySelector('.override-box');
 const recTechName = document.getElementById('rec-tech-name');
 const recTechReasoning = document.getElementById('rec-tech-reasoning');
+const recScore = document.getElementById('rec-score');
+const recConfidence = document.getElementById('rec-confidence');
 const recTravelTime = document.getElementById('rec-travel-time');
+const hardRulesPanel = document.getElementById('hard-rules-panel');
+const hardRulesSummary = document.getElementById('hard-rules-summary');
+const hardRulesList = document.getElementById('hard-rules-list');
+const noFeasibleBox = document.getElementById('no-feasible-box');
 
 const btnConfirmRecommended = document.getElementById('btn-confirm-recommended');
 const btnOpenOverride = document.getElementById('btn-open-override');
@@ -48,6 +60,37 @@ const modalOrderId = document.getElementById('modal-order-id');
 const modalTechId = document.getElementById('modal-tech-id');
 const modalFeedback = document.getElementById('modal-feedback');
 const realDuration = document.getElementById('real-duration');
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function setGuidedDemoStatus(message, state = 'running', activeStep = null) {
+  guidedDemoMessage.textContent = message;
+  guidedDemoState.textContent = state === 'done' ? 'Listo' : state === 'error' ? 'Error' : 'Ejecutando';
+  guidedDemoState.className = state === 'error'
+    ? 'badge badge-status-error'
+    : state === 'done'
+      ? 'badge badge-status-completada'
+      : 'badge badge-status-pendiente';
+  guidedDemoSteps.forEach(step => {
+    const key = step.getAttribute('data-guide-step');
+    step.classList.toggle('active', key === activeStep);
+    if (activeStep === null) {
+      step.classList.remove('completed');
+    } else if (key !== activeStep && !step.classList.contains('completed') && state !== 'error') {
+      const order = ['reset', 'select', 'dispatch', 'review', 'approve'];
+      if (order.indexOf(key) < order.indexOf(activeStep)) {
+        step.classList.add('completed');
+      }
+    }
+  });
+}
 
 // --- CARGA INICIAL DE DATOS ---
 
@@ -178,6 +221,70 @@ function populateOverrideSelect() {
   });
 }
 
+function renderHardRuleEvidence(candidates = []) {
+  const isApproved = (candidate) => candidate.validation_status
+    ? candidate.validation_status === 'aprobado'
+    : candidate.eligibility_status === 'eligible';
+  const approved = candidates.filter(isApproved);
+  const rejected = candidates.length - approved.length;
+  hardRulesSummary.textContent = `${approved.length} aptos / ${rejected} descartados`;
+  hardRulesList.innerHTML = '';
+
+  if (candidates.length === 0) {
+    hardRulesList.innerHTML = '<div class="empty-evidence">No hay evidencia de candidatos para esta orden.</div>';
+    return;
+  }
+
+  candidates.forEach(candidate => {
+    const approvedCandidate = isApproved(candidate);
+    const row = document.createElement('div');
+    row.className = `hard-rule-card ${approvedCandidate ? 'eligible' : 'rejected'}`;
+
+    const checks = Array.isArray(candidate.hard_rule_checks)
+      ? candidate.hard_rule_checks
+      : [];
+    const checksMarkup = checks.length > 0
+      ? checks.map(check => `
+          <span class="rule-chip ${check.status === 'pass' ? 'pass' : 'fail'}" title="${escapeHtml(check.detail || 'No informado')}">
+            <i class="fa-solid ${check.status === 'pass' ? 'fa-check' : 'fa-xmark'}"></i>
+            ${escapeHtml(check.label || check.key || 'Regla')}
+          </span>
+        `).join('')
+      : '<span class="rule-chip unknown"><i class="fa-solid fa-circle-question"></i> No informado</span>';
+
+    const alerts = Array.isArray(candidate.alerts) && candidate.alerts.length > 0
+      ? `<div class="hard-rule-alerts">${candidate.alerts.map(alert => `<span>${escapeHtml(alert)}</span>`).join('')}</div>`
+      : '';
+    const scoreText = candidate.score === null || candidate.score === undefined ? 'Sin score' : `Score ${candidate.score}`;
+
+    row.innerHTML = `
+      <div class="hard-rule-topline">
+        <strong>${escapeHtml(candidate.name)}</strong>
+        <span class="eligibility-badge ${approvedCandidate ? 'eligible' : 'rejected'}">
+          ${approvedCandidate ? 'Apto' : 'Descartado'}
+        </span>
+      </div>
+      <div class="hard-rule-meta">
+        <span>${escapeHtml(scoreText)}</span>
+        <span>${escapeHtml(candidate.calculated_travel_time_minutes)} min viaje</span>
+        <span>${escapeHtml(candidate.projected_workload_hours ?? 'N/D')} hs proyectadas</span>
+      </div>
+      <div class="rule-chip-grid">${checksMarkup}</div>
+      ${alerts}
+    `;
+    hardRulesList.appendChild(row);
+  });
+}
+
+function showNoFeasibleState(responseData) {
+  recommendationBox.style.display = 'none';
+  dispatcherActionsBox.style.display = 'none';
+  noFeasibleBox.style.display = 'block';
+  recommendationCard.style.display = 'block';
+  renderHardRuleEvidence(responseData?.candidates || []);
+  recommendationCard.scrollIntoView({ behavior: 'smooth' });
+}
+
 // --- CREAR ORDEN ---
 
 orderForm.addEventListener('submit', async (e) => {
@@ -216,6 +323,11 @@ async function startAgentSimulation(orderId) {
 
   // Limpiar estados de UI
   recommendationCard.style.display = 'none';
+  recommendationBox.style.display = 'flex';
+  dispatcherActionsBox.style.display = 'block';
+  noFeasibleBox.style.display = 'none';
+  hardRulesSummary.textContent = 'Sin evaluación';
+  hardRulesList.innerHTML = '';
   overrideFormContainer.style.display = 'none';
   agentCycleCard.style.display = 'block';
   cycleStatusText.textContent = 'Inicializando...';
@@ -308,9 +420,16 @@ async function startAgentSimulation(orderId) {
 
   // 5. LEARNING AGENT (WAITING FOR USER ACTION)
   const stepLearning = document.getElementById('step-learning');
-  stepLearning.classList.add('running');
-  stepLearning.querySelector('.step-summary').textContent = 'A la espera de retroalimentación...';
-  stepLearning.querySelector('.step-status').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin" style="color: var(--accent-purple);"></i>';
+  if (responseData?.recommended_assignment) {
+    stepLearning.classList.add('running');
+    stepLearning.querySelector('.step-summary').textContent = 'A la espera de retroalimentación...';
+    stepLearning.querySelector('.step-status').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin" style="color: var(--accent-purple);"></i>';
+  } else {
+    stepLearning.classList.remove('running');
+    stepLearning.classList.add('completed');
+    stepLearning.querySelector('.step-summary').textContent = 'Sin asignación factible para aprender';
+    stepLearning.querySelector('.step-status').innerHTML = '<i class="fa-solid fa-circle-info" style="color: var(--color-warning);"></i>';
+  }
 
   // Finalizar carga del ciclo
   cycleStatusText.textContent = 'Ciclo Completado';
@@ -324,14 +443,22 @@ async function startAgentSimulation(orderId) {
     const rec = responseData.recommended_assignment;
     recTechName.textContent = rec.name;
     recTechReasoning.textContent = rec.reasoning;
+    recScore.textContent = rec.score;
+    recConfidence.textContent = rec.confidence
+      ? `${Math.round(rec.confidence.value * 100)}% (${rec.confidence.label})`
+      : 'No calculada';
     recTravelTime.textContent = rec.travel_time;
+    renderHardRuleEvidence(responseData.candidates || []);
     recommendationCard.style.display = 'block';
     
     // Auto-scroll a la recomendación
     recommendationCard.scrollIntoView({ behavior: 'smooth' });
+  } else if (responseData) {
+    showNoFeasibleState(responseData);
   } else {
-    alert("El Agente Evaluador rechazó todas las propuestas de técnicos por incumplimiento de jornada laboral o habilidades.");
+    alert("No se pudo completar la simulación de despacho. Revisa el estado del servicio e intenta nuevamente.");
   }
+  return responseData;
 }
 
 // Evento de clic en pasos de la línea de tiempo para ver trazas cognitivas
@@ -452,25 +579,80 @@ completionForm.addEventListener('submit', async (e) => {
   }
 });
 
-// --- RESETEAR SIMULACIÓN ---
+// --- RESETEAR SIMULACIÓN Y DEMO GUIADA ---
+
+async function resetSimulation({ showConfirm = true, showAlert = true } = {}) {
+  if (showConfirm && !confirm("¿Estás seguro de que deseas reiniciar el simulador y limpiar el historial de la memoria persistente?")) {
+    return false;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/reset`, { method: 'POST' });
+    if (!res.ok) {
+      throw new Error(`Reset falló con estado ${res.status}`);
+    }
+    recommendationCard.style.display = 'none';
+    agentCycleCard.style.display = 'none';
+    currentSimulationData = null;
+    selectedOrder = null;
+    hardRulesSummary.textContent = 'Sin evaluación';
+    hardRulesList.innerHTML = '';
+
+    await loadData();
+    if (showAlert) {
+      alert("Simulación y memoria persistente reseteados a valores de fábrica.");
+    }
+    return true;
+  } catch (error) {
+    console.error('Error al resetear la simulación:', error);
+    return false;
+  }
+}
 
 btnReset.addEventListener('click', async () => {
-  if (confirm("¿Estás seguro de que deseas reiniciar el simulador y limpiar el historial de la memoria persistente?")) {
-    try {
-      const res = await fetch(`${API_BASE}/api/reset`, { method: 'POST' });
-      if (res.ok) {
-        recommendationCard.style.display = 'none';
-        agentCycleCard.style.display = 'none';
-        currentSimulationData = null;
-        selectedOrder = null;
-        
-        await loadData();
-        alert("Simulación y memoria persistente reseteados a valores de fábrica.");
-      }
-    } catch (error) {
-      console.error('Error al resetear la simulación:', error);
-    }
+  await resetSimulation();
+});
+
+btnGuidedDemo.addEventListener('click', async () => {
+  btnGuidedDemo.disabled = true;
+  setGuidedDemoStatus('Restaurando datos reproducibles...', 'running', 'reset');
+
+  const resetOk = await resetSimulation({ showConfirm: false, showAlert: false });
+  if (!resetOk) {
+    setGuidedDemoStatus('No se pudo restaurar el escenario. Revisa la API e intenta nuevamente.', 'error', 'reset');
+    btnGuidedDemo.disabled = false;
+    return;
   }
+
+  weatherSelect.value = 'soleado';
+  trafficSelect.value = 'normal';
+  gpsSelect.value = 'online';
+
+  setGuidedDemoStatus('Seleccionando una orden pendiente...', 'running', 'select');
+  const pendingOrder = orders.find(order => order.status === 'pendiente');
+  if (!pendingOrder) {
+    setGuidedDemoStatus('No hay órdenes pendientes para ejecutar la demo guiada.', 'error', 'select');
+    btnGuidedDemo.disabled = false;
+    return;
+  }
+
+  setGuidedDemoStatus(`Ejecutando despacho para ${pendingOrder.client}...`, 'running', 'dispatch');
+  const responseData = await startAgentSimulation(pendingOrder.id);
+  if (!responseData) {
+    setGuidedDemoStatus('La simulación no devolvió resultado. Revisa el servicio e intenta nuevamente.', 'error', 'dispatch');
+    btnGuidedDemo.disabled = false;
+    return;
+  }
+
+  setGuidedDemoStatus(
+    responseData.recommended_assignment
+      ? 'Revisa reglas duras, score y confianza antes de aprobar o cambiar técnico.'
+      : 'Revisa las razones de descarte. No se fuerza una recomendación.',
+    'running',
+    responseData.recommended_assignment ? 'approve' : 'review'
+  );
+  guidedDemoState.textContent = 'Revisión';
+  btnGuidedDemo.disabled = false;
 });
 
 // Inicialización de la consola al cargar página

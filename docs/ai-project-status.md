@@ -52,6 +52,8 @@ cold start before judging the deployment.
 | Cybersecurity log | Done | `docs/cybersecurity-log.md`. |
 | AI co-work log | Done | `docs/ai-cowork-log.md`. |
 | LLM/SLM local reflection | Done | Included in final report. |
+| Guided demo flow | Done | Header control resets seeded data and runs a guided dispatch review. |
+| Hard-rule evidence in UI | Done | Simulation exposes all technicians with pass/fail checks before score. |
 
 ## Stack
 
@@ -183,12 +185,36 @@ tests/unit/test_project_metadata.py
 
 Earlier broader test runs passed with launch-process caveats in the sandbox.
 
+Recent checks performed after guided-demo implementation:
+
+- Legacy simulation returns 5 candidates for `order_001`: 2 approved and 3 rejected.
+- Each candidate includes 6 hard-rule checks.
+- Rejected candidates keep rejection evidence and do not receive a score.
+- Recommendation confidence is returned by the backend as separate evidence, not estimated from score in the browser.
+- Frontend HTML exposes `Demo Guiada`, score/confidence badges, and hard-rule panel.
+- JavaScript syntax check passed with `node --check frontend/main.js`.
+- Focused compatibility/repository checks passed:
+
+```text
+tests/integration/test_legacy_compatibility.py
+tests/integration/test_legacy_eligibility_regression.py
+tests/unit/test_repository_hygiene.py
+tests/unit/test_project_metadata.py
+17 passed
+```
+
+- Docker image build passed:
+
+```bash
+docker build -t smart-dispatch-ia:guided-demo .
+```
+
 ## Known Limits
 
 - No authentication or roles.
 - No admin panel.
 - Runtime persistence on free hosting can be ephemeral.
-- The frontend still uses some legacy compatibility routes.
+- The frontend still uses some legacy compatibility routes, now with richer evidence for the guided demo.
 - The canonical `/api/v1` backend is stronger than the current UI presentation.
 - No real GPS, traffic, weather, or LLM integration is connected.
 - Ollama/SLM integration is documented as a possible future extension, not a
@@ -200,16 +226,13 @@ Do not treat these as accidental omissions. They are documented MVP boundaries.
 
 Only do these if the user asks for more after the final delivery:
 
-1. Add a guided in-app demo flow with scenario reset, work-order selection, dispatch, approval, and service completion.
-2. Show hard-constraint pass/fail evidence before score for every technician.
-3. Separate objective score and recommendation confidence visually.
-4. Add a `NO_FEASIBLE_CANDIDATES` scenario with rejection reasons and no forced recommendation.
-5. Surface canonical `DispatchRun` state transitions in the frontend.
-6. Implement human decision and outcome commands on the canonical `/api/v1` flow.
-7. Complete episodic memory and semantic promotion with memory on/off comparison scenarios.
-8. Improve accessibility with visible focus, semantic labels, keyboard navigation, and readable errors.
-9. Add optional Ollama adapter for the `ANALYZE` stage.
-10. Add authentication only if the product becomes multi-user.
+1. Add a dedicated seeded `NO_FEASIBLE_CANDIDATES` order so the no-forced-recommendation state is easy to demo.
+2. Surface canonical `DispatchRun` state transitions from `/api/v1` in the frontend.
+3. Implement human decision and outcome commands on the canonical `/api/v1` flow.
+4. Complete episodic memory and semantic promotion with memory on/off comparison scenarios.
+5. Improve accessibility with visible focus, semantic labels, keyboard navigation, and readable errors.
+6. Add optional Ollama adapter for the `ANALYZE` stage.
+7. Add authentication only if the product becomes multi-user.
 
 ## Agent Rules
 

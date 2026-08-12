@@ -134,6 +134,138 @@ def get_distance(zone_a: str, zone_b: str) -> float:
     return ZONE_DISTANCES.get(zone_a, {}).get(zone_b, 8.0)
 
 
+def _shift_hours(technician: dict[str, Any]) -> float | None:
+    shift = technician.get("shift", {})
+    if not isinstance(shift, dict) or "start" not in shift or "end" not in shift:
+        return None
+    start = str(shift["start"])
+    end = str(shift["end"])
+    try:
+        start_hour, start_minute = [int(part) for part in start.split(":", 1)]
+        end_hour, end_minute = [int(part) for part in end.split(":", 1)]
+    except ValueError:
+        return None
+    start_total = start_hour + start_minute / 60
+    end_total = end_hour + end_minute / 60
+    if end_total <= start_total:
+        end_total += 24
+    return end_total - start_total
+
+
+def _rule_check(key: str, label: str, passed: bool, detail: str) -> dict[str, Any]:
+    return {
+        "key": key,
+        "label": label,
+        "status": "pass" if passed else "fail",
+        "detail": detail,
+    }
+
+
+def build_hard_rule_checks(
+    technician: dict[str, Any],
+    order: dict[str, Any],
+    travel_minutes: float,
+) -> tuple[list[dict[str, Any]], list[str], float]:
+    required = order["structured_data"].get("required_skills", [])
+    required_ppe = order["structured_data"].get("required_ppe", order.get("required_ppe", []))
+    certifications = technician.get("certifications", [])
+    ppe = technician.get("ppe", [])
+    missing_skills = [skill for skill in required if skill not in certifications]
+    missing_ppe = [item for item in required_ppe if item not in ppe]
+    potential_hours = technician["active_workload_hours"] + (
+        travel_minutes + 90
+    ) / 60
+    shift_hours = _shift_hours(technician)
+
+    checks = [
+        _rule_check(
+            "availability",
+            "Disponibilidad",
+            technician.get("status") == "disponible",
+            (
+                "Disponible para despacho"
+                if technician.get("status") == "disponible"
+                else f"Estado actual: {technician.get('status', 'desconocido')}"
+            ),
+        ),
+        _rule_check(
+            "certifications",
+            "Certificaciones",
+            not missing_skills,
+            (
+                "Cumple certificaciones requeridas"
+                if not missing_skills
+                else "Faltan: " + ", ".join(missing_skills)
+            ),
+        ),
+        _rule_check(
+            "shift",
+            "Turno",
+            shift_hours is not None and shift_hours >= 8,
+            (
+                f"Turno configurado de {shift_hours:.1f}hs"
+                if shift_hours is not None
+                else "Turno ausente o inválido"
+            ),
+        ),
+        _rule_check(
+            "workload",
+            "Jornada máxima",
+            potential_hours <= 8,
+            f"Jornada proyectada: {potential_hours:.1f}hs",
+        ),
+        _rule_check(
+            "driving_limit",
+            "Límite de conducción",
+            travel_minutes <= 240,
+            f"Viaje estimado: {int(travel_minutes)} min",
+        ),
+        _rule_check(
+            "ppe",
+            "EPP requerido",
+            not missing_ppe,
+            (
+                "EPP requerido disponible"
+                if required_ppe and not missing_ppe
+                else "Sin EPP especial requerido en el escenario demo"
+                if not required_ppe
+                else "Falta EPP: " + ", ".join(missing_ppe)
+            ),
+        ),
+    ]
+    rejection_reasons = [
+        check["detail"] for check in checks if check["status"] == "fail"
+    ]
+    return checks, rejection_reasons, potential_hours
+
+
+def build_confidence_evidence(
+    recommended: dict[str, Any],
+    candidates: list[dict[str, Any]],
+) -> dict[str, Any]:
+    rejected_count = sum(
+        1 for candidate in candidates if candidate["validation_status"] == "rechazado"
+    )
+    value = 0.84
+    factors = ["Reglas duras completas para el técnico recomendado"]
+    if recommended.get("gps_signal") == "offline":
+        value -= 0.15
+        factors.append("Señal GPS offline reduce la certeza contextual")
+    if rejected_count:
+        value -= 0.05
+        factors.append(f"{rejected_count} técnicos descartados por reglas duras")
+    if recommended.get("memory_bonus", 0) > 0:
+        value += 0.04
+        factors.append("Existe evidencia histórica aplicable")
+    value = max(0.45, min(0.95, value))
+    label = "alta" if value >= 0.75 else "media" if value >= 0.6 else "baja"
+    return {
+        "value": round(value, 2),
+        "label": label,
+        "factors": factors,
+    }
+
+
 async def parse_body(request: Request) -> dict[str, Any] | None:
     try:
         value = await request.json()
@@ -162,6 +294,10 @@ async def reset_simulation() -> dict[str, str]:
     init_storage()
     technicians[:] = load_seed_list(SEED_TECHNICIANS_PATH)
     orders[:] = load_seed_list(SEED_ORDERS_PATH)
+    if SEED_LEARNING_STORE_PATH.exists():
+        write_learnings(load_seed_list(SEED_LEARNING_STORE_PATH))
+    else:
+        write_learnings(_seed_learnings())
     return {"message": "Estado de simulación y memoria restablecidos."}
 
 
@@ -226,16 +362,18 @@ def build_candidates(
     candidates: list[dict[str, Any]] = []
     required = order["structured_data"]["required_skills"]
     for technician in technicians:
-        if required and not all(
-            skill in technician["certifications"] for skill in required
-        ):
-            continue
         distance_km = get_distance(technician["zone"], order["zone"])
         travel_minutes = distance_km * 4
         if environment.get("traffic") == "congestionado":
             travel_minutes += distance_km * 5
         if environment.get("weather") == "lluvia_extrema":
             travel_minutes += 15
+        hard_rule_checks, rejection_reasons, potential_hours = build_hard_rule_checks(
+            technician,
+            order,
+            travel_minutes,
+        )
+        eligible = not rejection_reasons
 
         memory_bonus = 0
         memory_notes: list[str] = []
@@ -272,7 +410,11 @@ def build_candidates(
         gps_penalty = 20 if environment.get("gps_signal") == "offline" else 0
         proximity = max(0, 45 - distance_km * 3.5)
         workload = max(0, 35 - technician["active_workload_hours"] * 5)
-        score = min(100, max(0, int(50 + proximity + workload + memory_bonus - gps_penalty)))
+        score = (
+            min(100, max(0, int(50 + proximity + workload + memory_bonus - gps_penalty)))
+            if eligible
+            else None
+        )
         candidates.append(
             {
                 "technician_id": technician["id"],
@@ -282,6 +424,7 @@ def build_candidates(
                 "calculated_travel_time_minutes": int(travel_minutes),
                 "distance_km": distance_km,
                 "active_workload_hours": technician["active_workload_hours"],
+                "projected_workload_hours": round(potential_hours, 1),
                 "memory_bonus": memory_bonus,
                 "memory_justification": (
                     " ".join(memory_notes)
@@ -289,9 +432,18 @@ def build_candidates(
                     else "Sin datos históricos específicos."
                 ),
                 "gps_signal": environment.get("gps_signal"),
+                "eligibility_status": "eligible" if eligible else "rejected",
+                "hard_rule_checks": hard_rule_checks,
+                "rejection_reasons": rejection_reasons,
             }
         )
-    candidates.sort(key=lambda candidate: candidate["score"], reverse=True)
+    candidates.sort(
+        key=lambda candidate: (
+            candidate["score"] is not None,
+            candidate["score"] or -1,
+        ),
+        reverse=True,
+    )
     return candidates
 
 
@@ -309,7 +461,10 @@ def evaluate_candidates(
         potential_hours = technician["active_workload_hours"] + (
             candidate["calculated_travel_time_minutes"] + 90
         ) / 60
-        if potential_hours > 8:
+        if candidate.get("eligibility_status") == "rejected":
+            status = "rechazado"
+            alerts.extend(candidate.get("rejection_reasons", []))
+        if potential_hours > 8 and not any("Exceso de jornada" in alert for alert in alerts):
             status = "rechazado"
             alerts.append(f"Exceso de jornada: {potential_hours:.1f}hs.")
         if candidate["gps_signal"] == "offline":
@@ -340,6 +495,11 @@ async def simulate_dispatch(request: Request) -> JSONResponse:
         if candidate["validation_status"] == "aprobado"
     ]
     recommended = approved[0] if approved else None
+    confidence = (
+        build_confidence_evidence(recommended, evaluated)
+        if recommended
+        else None
+    )
     response = {
         "order_id": order["id"],
         "recommended_assignment": (
@@ -347,6 +507,7 @@ async def simulate_dispatch(request: Request) -> JSONResponse:
                 "technician_id": recommended["technician_id"],
                 "name": recommended["name"],
                 "score": recommended["score"],
+                "confidence": confidence,
                 "travel_time": recommended["calculated_travel_time_minutes"],
                 "reasoning": (
                     f"Se propone a {recommended['name']} "

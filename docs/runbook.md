@@ -193,10 +193,23 @@ Use this section as the running implementation log for the final report and proj
 - Added `docs/deployment-options.md` with Koyeb, Render, and GitHub/Docker fallback options.
 - Published Render Free service at `https://smart-dispatch-q4xk.onrender.com`.
 
+### 2026-08-11 - Guided Demo And Hard-Rule Evidence
+
+- Added a `Demo Guiada` control in the header.
+- Added an in-app guided review panel with reset, order selection, dispatch, evidence review, and approval steps.
+- Extended legacy dispatch simulation to return all technicians with hard-rule pass/fail evidence.
+- Preserved recommendation behavior: only approved candidates can be recommended.
+- Added visible score and backend-provided confidence badges in the recommendation panel.
+- Added hard-rule evidence cards with availability, certifications, shift, workload, driving limit, and EPP checks.
+- Added no-feasible UI state that does not force a recommendation when all candidates are rejected.
+- Verified API output for `order_001`: 5 candidates, 2 approved, 3 rejected, 6 checks per candidate, rejected candidates without score, and backend-provided confidence `0.79 alta`.
+- Verified focused tests: `17 passed`.
+- Verified Docker image build with `docker build -t smart-dispatch-ia:guided-demo .`.
+
 ## Next Technical Actions
 
-- Publish the repository to GitHub and put the URL on the first page of the report.
-- Choose a live deployment target or document Docker/GitHub as the published runnable artifact.
-- Capture frontend screenshots from the Docker app on port `8050`.
-- Record one real usage session log using the visible app plus API evidence.
-- Update the academic report with architecture diagram, UML, Nielsen UX review, cybersecurity log, and AI co-work section.
+- Add a dedicated seeded `NO_FEASIBLE_CANDIDATES` order.
+- Surface canonical `DispatchRun` state transitions from `/api/v1` in the frontend.
+- Move human decision and service outcome to canonical `/api/v1` commands.
+- Add memory on/off comparison scenarios.
+- Improve keyboard accessibility and semantic labels.

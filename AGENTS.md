@@ -98,6 +98,8 @@ The final-cycle delivery is functionally complete:
 - Final Markdown report exists.
 - Final PDF report exists and includes screenshots.
 - README and runbook document how to evaluate the project.
+- Guided demo flow exists in the UI.
+- Hard-rule evidence is visible before score in the recommendation panel.
 
 Remaining work should be treated as polish unless the user asks for new product
 features.

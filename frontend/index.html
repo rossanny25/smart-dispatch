@@ -51,6 +51,7 @@
           </select>
         </div>
         <button id="btn-reset" class="btn btn-secondary" title="Resetear datos y memoria"><i class="fa-solid fa-arrow-rotate-left"></i> Reset</button>
+        <button id="btn-guided-demo" class="btn btn-primary" title="Ejecutar recorrido guiado"><i class="fa-solid fa-wand-magic-sparkles"></i> Demo Guiada</button>
       </div>
     </header>
 
@@ -88,6 +89,24 @@
               </div>
               <button type="submit" class="btn btn-primary"><i class="fa-solid fa-bolt"></i> Ingresar y Procesar con IA</button>
             </form>
+          </div>
+        </div>
+
+        <!-- Demo guiada -->
+        <div class="card card-glass" id="guided-demo-card">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-compass"></i> Recorrido Guiado</h2>
+            <span class="badge badge-status-pendiente" id="guided-demo-state">Listo</span>
+          </div>
+          <div class="card-body">
+            <div class="guided-demo-steps" id="guided-demo-steps">
+              <div class="guided-step" data-guide-step="reset"><i class="fa-solid fa-rotate-left"></i><span>Restaurar escenario</span></div>
+              <div class="guided-step" data-guide-step="select"><i class="fa-solid fa-list-check"></i><span>Seleccionar orden</span></div>
+              <div class="guided-step" data-guide-step="dispatch"><i class="fa-solid fa-route"></i><span>Ejecutar despacho</span></div>
+              <div class="guided-step" data-guide-step="review"><i class="fa-solid fa-shield-halved"></i><span>Revisar reglas duras</span></div>
+              <div class="guided-step" data-guide-step="approve"><i class="fa-solid fa-circle-check"></i><span>Aprobar o cambiar</span></div>
+            </div>
+            <p class="guided-demo-message" id="guided-demo-message">Usa este recorrido para validar el flujo completo con datos reproducibles.</p>
           </div>
         </div>
 
@@ -186,10 +205,25 @@
                 <h3 id="rec-tech-name">Nombre del Técnico</h3>
                 <p id="rec-tech-reasoning">Justificación del algoritmo...</p>
                 <div class="rec-stats">
+                  <span class="stat-badge"><i class="fa-solid fa-gauge-high"></i> Score <span id="rec-score">0</span></span>
+                  <span class="stat-badge"><i class="fa-solid fa-signal"></i> Confianza <span id="rec-confidence">0%</span></span>
                   <span class="stat-badge"><i class="fa-solid fa-route"></i> <span id="rec-travel-time">0</span> min viaje</span>
                   <span class="stat-badge"><i class="fa-solid fa-clock"></i> 90 min estimación</span>
                 </div>
               </div>
+            </div>
+
+            <div class="hard-rules-panel" id="hard-rules-panel">
+              <div class="hard-rules-header">
+                <h3><i class="fa-solid fa-shield-halved"></i> Reglas duras antes del score</h3>
+                <span id="hard-rules-summary">Sin evaluación</span>
+              </div>
+              <div class="hard-rules-list" id="hard-rules-list"></div>
+            </div>
+
+            <div class="no-feasible-box" id="no-feasible-box" style="display: none;">
+              <h3><i class="fa-solid fa-triangle-exclamation"></i> Sin candidatos factibles</h3>
+              <p>No se fuerza una recomendación porque ningún técnico cumple todas las restricciones duras.</p>
             </div>
 
             <div class="override-box">

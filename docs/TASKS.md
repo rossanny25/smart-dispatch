@@ -54,14 +54,12 @@ Docker, Render y documentacion tecnica de producto.
 
 ## Fase 5: Mejoras Futuras Opcionales
 
+- [x] Agregar demo guiada dentro de la interfaz.
+- [x] Mostrar reglas duras por tecnico antes del score.
+- [x] Separar visualmente score objetivo y confianza de recomendacion.
 - [ ] Mostrar `DispatchRun` canonico de `/api/v1` en el frontend.
 - [ ] Implementar decision humana y outcome completo sobre API canonica.
 - [ ] Agregar escenario explicito de `NO_FEASIBLE_CANDIDATES`.
-- [ ] Separar visualmente score objetivo y confianza en la UI.
-- [ ] Agregar demo guiada dentro de la interfaz.
-- [ ] Mostrar reglas duras por tecnico antes del score.
-- [ ] Separar visualmente score objetivo y confianza de recomendacion.
-- [ ] Agregar escenario `NO_FEASIBLE_CANDIDATES`.
 - [ ] Mostrar estados canonicos `CAPTURE`, `ANALYZE`, `PLAN`, `EVALUATE` y `WAIT_FOR_DECISION`.
 - [ ] Evaluar Ollama como adaptador local opcional de `ANALYZE`.
 - [ ] Agregar autenticacion solo si el proyecto deja de ser single-user.
