@@ -7,6 +7,7 @@
 | Aplicacion en vivo | <https://smart-dispatch-q4xk.onrender.com> |
 | Repositorio GitHub | <https://github.com/rossanny25/smart-dispatch> |
 | Demo local Docker | <http://127.0.0.1:8050> |
+| Acceso demo | Usuario `tecnico-fisca` / clave `smart2026AI` |
 | Guia de ejecucion | [docs/runbook.md](./runbook.md) |
 | Evidencia de sesion | [docs/usage-session-log.md](./usage-session-log.md) |
 

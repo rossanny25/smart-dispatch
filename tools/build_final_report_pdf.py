@@ -230,6 +230,7 @@ def build_story(styles):
                 ["Aplicacion en vivo", "https://smart-dispatch-q4xk.onrender.com"],
                 ["Repositorio GitHub", "https://github.com/rossanny25/smart-dispatch"],
                 ["Demo Docker local", "http://127.0.0.1:8050"],
+                ["Acceso demo", "Usuario tecnico-fisca / clave smart2026AI"],
                 ["Guia de ejecucion", "docs/runbook.md"],
                 ["Evidencia de sesion", "docs/usage-session-log.md"],
             ],
@@ -409,13 +410,14 @@ def build_story(styles):
                 "Runtime SQLite local: data/smart_dispatch.db.",
                 "Runtime Docker: volumen smart_dispatch_data.",
                 "Reset operativo: POST /api/reset o docker compose down -v.",
+                "Acceso demo: usuario tecnico-fisca, clave smart2026AI.",
             ],
             styles,
         )
     )
     story.append(
         p(
-            "No se implemento login ni panel de administracion porque el alcance actual es un MVP de un solo usuario. La carga de informacion se realiza por seeds JSON versionados y por el flujo de aprendizaje del simulador.",
+            "El sistema incluye login single-user para proteger la UI y las rutas API con cookie de sesion firmada. No incluye panel de administracion ni roles: la carga de informacion se realiza por seeds JSON versionados y por el flujo de aprendizaje del simulador.",
             styles,
         )
     )
@@ -491,8 +493,8 @@ def build_story(styles):
         table(
             [
                 ["Riesgo", "Mitigacion actual", "Pendiente"],
-                ["Exposicion accidental", "Default local 127.0.0.1; Docker explicito en 8050.", "Auth, HTTPS y politicas de red."],
-                ["Falta de autenticacion", "MVP single-user.", "Agregar auth antes de uso multiusuario o productivo."],
+                ["Exposicion accidental", "Default local 127.0.0.1; Docker explicito en 8050; login single-user.", "HTTPS y politicas de red."],
+                ["Credencial compartida", "Cookie firmada y credencial configurable por entorno.", "Usuarios, roles, auditoria y CSRF antes de uso multiusuario."],
                 ["Datos sensibles", "Evidencia demo y recomendacion por zona.", "Politica para datos reales."],
                 ["JSON malformado/grande", "/api/v1 limita 1 MiB y usa errores tipados.", "Migrar rutas legacy restantes."],
                 ["Excepciones inseguras", "Errores conocidos se mapean a respuestas estables.", "Politica productiva completa."],
