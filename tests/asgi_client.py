@@ -3,6 +3,8 @@ import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from app.auth import DEFAULT_USERNAME, SESSION_COOKIE, create_session_token
+
 
 def request_asgi(
     app: object,
@@ -13,6 +15,7 @@ def request_asgi(
     body: bytes | None = None,
     body_chunks: Sequence[bytes] | None = None,
     headers: Mapping[str, str] | None = None,
+    authenticated: bool = True,
 ) -> tuple[int, dict[str, str], bytes]:
     if sum(value is not None for value in (json_body, body, body_chunks)) > 1:
         raise ValueError("Provide only one of json_body, body, or body_chunks.")
@@ -37,9 +40,16 @@ def request_asgi(
     async def send(message: dict[str, object]) -> None:
         messages.append(message)
 
+    request_headers = dict(headers or {})
+    has_cookie = any(key.lower() == "cookie" for key in request_headers)
+    if authenticated and not has_cookie:
+        request_headers["cookie"] = (
+            f"{SESSION_COOKIE}={create_session_token(DEFAULT_USERNAME)}"
+        )
+
     raw_headers = [
         (key.lower().encode(), value.encode())
-        for key, value in (headers or {}).items()
+        for key, value in request_headers.items()
     ]
     if json_body is not None:
         header_names = {key for key, _ in raw_headers}

@@ -18,6 +18,7 @@ const trafficSelect = document.getElementById('traffic-select');
 const gpsSelect = document.getElementById('gps-select');
 const btnReset = document.getElementById('btn-reset');
 const btnGuidedDemo = document.getElementById('btn-guided-demo');
+const btnLogout = document.getElementById('btn-logout');
 const guidedDemoState = document.getElementById('guided-demo-state');
 const guidedDemoMessage = document.getElementById('guided-demo-message');
 const guidedDemoSteps = document.querySelectorAll('.guided-step');
@@ -653,6 +654,14 @@ btnGuidedDemo.addEventListener('click', async () => {
   );
   guidedDemoState.textContent = 'Revisión';
   btnGuidedDemo.disabled = false;
+});
+
+btnLogout.addEventListener('click', async () => {
+  try {
+    await fetch(`${API_BASE}/auth/logout`, { method: 'POST' });
+  } finally {
+    window.location.href = '/login';
+  }
 });
 
 // Inicialización de la consola al cargar página

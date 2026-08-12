@@ -4,7 +4,8 @@ This document is the operational guide for starting, verifying, stopping, and do
 
 ## Recommended Demo Startup
 
-Use Docker when the goal is to show the app to a teacher, record screenshots, or keep the local Python setup out of the way.
+Use Docker when the goal is to show the app, record screenshots, or keep the
+local Python setup out of the way.
 
 ```bash
 docker compose up --build
@@ -14,6 +15,13 @@ Open:
 
 ```text
 http://127.0.0.1:8050
+```
+
+Default demo login:
+
+```text
+User: tecnico-fisca
+Password: smart2026AI
 ```
 
 Published Render URL:
@@ -55,6 +63,9 @@ uv run python3 server.py
 | `SMART_DISPATCH_PORT` | `8000` | `8050` | HTTP port for the app. |
 | `SMART_DISPATCH_DB_PATH` | `data/smart_dispatch.db` | `/app/runtime-data/smart_dispatch.db` | SQLite runtime database. |
 | `SMART_DISPATCH_LEARNING_STORE_PATH` | `data/learning_store.runtime.json` | `/app/runtime-data/learning_store.runtime.json` | Runtime copy of brownfield learning memory. |
+| `SMART_DISPATCH_LOGIN_USER` | `tecnico-fisca` | unset | Single-user login name. |
+| `SMART_DISPATCH_LOGIN_PASSWORD` | `smart2026AI` | unset | Single-user login password. |
+| `SMART_DISPATCH_SESSION_SECRET` | local dev fallback | unset | Secret used to sign session cookies; set this in hosted/shared environments. |
 
 ## Verify The App Is Running
 
@@ -67,8 +78,10 @@ http://127.0.0.1:8050
 API check:
 
 ```bash
-curl http://127.0.0.1:8050/api/technicians
+curl -i http://127.0.0.1:8050/login
 ```
+
+Protected API routes should return `401` without a valid session cookie.
 
 Container status:
 
@@ -154,7 +167,7 @@ Use this section as the running implementation log for the final report and proj
 - Verified image build with `docker build -t smart-dispatch-ia:local .`.
 - Verified container startup on `http://127.0.0.1:8050`.
 - Verified legacy API data with `/api/technicians`.
-- Added `docs/final-delivery-guide.md` for the teacher's final-cycle requirements.
+- Added `docs/final-delivery-guide.md` for the final delivery requirements.
 
 ### 2026-08-11 - Test Environment Notes
 
@@ -183,7 +196,7 @@ Use this section as the running implementation log for the final report and proj
 - Moved legacy demo Technicians and Orders into `data/seeds/technicians.json` and `data/seeds/orders.json`.
 - Updated the legacy FastAPI compatibility adapter to load demo data from seed JSON.
 - Updated `/api/reset` to reload Technicians and Orders from seed files.
-- Added `docs/repository-and-data-strategy.md` to explain monorepo publication and data loading without login/admin.
+- Added `docs/repository-and-data-strategy.md` to explain monorepo publication and seed-based data loading without a public admin panel.
 
 ### 2026-08-11 - Deploy Configuration
 
@@ -205,6 +218,19 @@ Use this section as the running implementation log for the final report and proj
 - Verified API output for `order_001`: 5 candidates, 2 approved, 3 rejected, 6 checks per candidate, rejected candidates without score, and backend-provided confidence `0.79 alta`.
 - Verified focused tests: `17 passed`.
 - Verified Docker image build with `docker build -t smart-dispatch-ia:guided-demo .`.
+
+### 2026-08-11 - Single-User Login
+
+- Added a dedicated `/login` page and logout action in the main header.
+- Protected browser and API routes with a signed `smart_dispatch_session` cookie.
+- Kept `/healthz`, `/login`, `/auth/login`, and `/index.css` public.
+- Added JSON and form login support without introducing extra multipart dependencies.
+- Default demo credential: `tecnico-fisca` / `smart2026AI`.
+- Added environment overrides for username, password, and session signing secret.
+- Verified focused tests: `29 passed`.
+- Verified Docker HTTP behavior on port `8050`: `/login` returned `200`,
+  unauthenticated `/api/orders` returned `401`, JSON login returned `200`, and
+  authenticated `/api/orders` returned `200`.
 
 ## Next Technical Actions
 

@@ -1,5 +1,9 @@
 # Source Tree Analysis
 
+> Historical snapshot: this file describes the first brownfield prototype. The
+> current source tree and delivery status live in `AGENTS.md` and
+> `docs/ai-project-status.md`.
+
 ```text
 smart-dispatch-ia-spec-v2/
 ├── server.py                 # Python entry point, API, orchestration simulation, persistence
@@ -28,5 +32,8 @@ smart-dispatch-ia-spec-v2/
 
 ## Integration Points
 
-The frontend uses same-origin `fetch` calls to `/api/*`. The server reads/writes `data/learning_store.json`. There are no external model, map, traffic, weather, database, or authentication integrations.
-
+The original frontend used same-origin `fetch` calls to `/api/*`, and the first
+server version read/wrote `data/learning_store.json`. The current application is
+served by FastAPI, uses SQLite for runtime persistence, and includes
+single-user login. There are still no external model, map, traffic, or weather
+integrations.

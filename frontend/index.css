@@ -300,7 +300,7 @@ label {
   color: var(--text-secondary);
 }
 
-textarea, input[type="text"], input[type="number"], select {
+textarea, input[type="text"], input[type="password"], input[type="number"], select {
   background: rgba(0, 0, 0, 0.2);
   color: var(--text-primary);
   border: 1px solid var(--border-glass);
@@ -312,7 +312,7 @@ textarea, input[type="text"], input[type="number"], select {
   transition: all 0.3s ease;
 }
 
-textarea:focus, input[type="text"]:focus, input[type="number"]:focus, select:focus {
+textarea:focus, input[type="text"]:focus, input[type="password"]:focus, input[type="number"]:focus, select:focus {
   border-color: var(--accent-cyan);
   box-shadow: 0 0 0 2px rgba(0, 210, 211, 0.15);
 }
@@ -972,4 +972,65 @@ textarea {
   0% { opacity: 0.6; }
   50% { opacity: 1; }
   100% { opacity: 0.6; }
+}
+
+/* --- LOGIN --- */
+.login-page {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-shell {
+  width: min(440px, 100%);
+}
+
+.login-card {
+  padding: 28px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.login-brand h1 {
+  font-family: var(--font-title);
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.login-brand p {
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.login-submit {
+  width: 100%;
+  margin-top: 6px;
+}
+
+.login-error {
+  color: var(--color-danger);
+  background: rgba(255, 71, 87, 0.1);
+  border: 1px solid rgba(255, 71, 87, 0.25);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  margin-bottom: 14px;
 }

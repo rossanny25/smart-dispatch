@@ -1,10 +1,13 @@
 # Current API Contracts
 
 Base URL: same origin as the browser. Content type: JSON except for static assets.
+API routes require a valid `smart_dispatch_session` cookie created by
+`POST /auth/login`.
 
 ## GET `/api/technicians`
 
-Returns the in-memory technician array. No authentication, filtering, pagination, or error envelope.
+Returns the in-memory technician array. No filtering, pagination, or canonical
+error envelope.
 
 ## GET `/api/orders`
 
@@ -43,7 +46,9 @@ Request:
 }
 ```
 
-Response includes `recommended_assignment`, ranked `candidates`, and `agent_logs`. The implemented contract lacks run state, per-component score breakdown, hard-rule evidence, recommendation confidence, data freshness, and structured discard reasons.
+Response includes `recommended_assignment`, ranked `candidates`, hard-rule
+checks, recommendation confidence, and `agent_logs`. The compatibility contract
+still lacks canonical run state, data freshness, and a stable error envelope.
 
 ## POST `/api/dispatch/confirm`
 
@@ -66,4 +71,3 @@ The PRD requires:
 - all alternatives with eligibility and discard reasons;
 - structured errors, including `NO_FEASIBLE_CANDIDATES`;
 - KPI and scenario-comparison endpoints or equivalent export.
-

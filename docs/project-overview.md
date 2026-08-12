@@ -1,4 +1,9 @@
-# Smart Dispatch IA — Brownfield Project Overview
+# Smart Dispatch IA - Brownfield Project Overview
+
+> Historical snapshot: this document captured the repository before the FastAPI,
+> SQLite, Docker, deployment, guided demo, hard-rule evidence, and single-user
+> login work. For current status, use `AGENTS.md` and
+> `docs/ai-project-status.md`.
 
 ## Executive Summary
 
@@ -48,7 +53,10 @@ The current implementation demonstrates the intended experience, but it does not
 - Orders and technician workload live in process memory and are lost on restart.
 - The reset route does not restore the seeded learning file when it already exists.
 - The UI exposes simulated “thought” traces; product output should use concise decision evidence instead of private reasoning traces.
-- No request schema validation, authentication, concurrency control, migrations, automated tests, or deployment definition exists.
+- At the time of this snapshot, request schema validation, authentication,
+  concurrency control, migrations, automated tests, and deployment definition
+  did not exist. Current implementation status is tracked in
+  `docs/ai-project-status.md`.
 
 ## Detailed Documentation
 

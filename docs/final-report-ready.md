@@ -255,8 +255,12 @@ Memoria y datos:
 - Runtime SQLite local: `data/smart_dispatch.db`.
 - Runtime Docker: volumen `smart_dispatch_data`.
 - Reset operativo rapido: `POST /api/reset` o `docker compose down -v`.
+- Acceso demo: usuario `tecnico-fisca`, clave `smart2026AI`.
 
-No se implemento login ni panel de administracion porque el alcance actual es un MVP de un solo usuario. La carga de informacion se realiza por seeds JSON versionados y por el flujo de aprendizaje del simulador.
+El sistema incluye login single-user para proteger la UI y las rutas API con
+cookie de sesion firmada. No incluye panel de administracion ni roles: la carga
+de informacion se realiza por seeds JSON versionados y por el flujo de
+aprendizaje del simulador.
 
 ## 9. Capturas del frontend
 
@@ -348,8 +352,8 @@ Conclusion UX: la interfaz es suficiente para operar el MVP. Su siguiente mejora
 
 | Riesgo | Impacto | Mitigacion actual | Limitacion pendiente |
 | --- | --- | --- | --- |
-| Exposicion accidental | Acceso no deseado al prototipo. | Default local `127.0.0.1`; Docker explicito en `8050`. | Produccion requiere auth, HTTPS y politicas de red. |
-| Falta de autenticacion | Cualquier usuario con acceso al puerto podria operar. | Declarado como MVP single-user. | Agregar auth antes de uso multiusuario o productivo. |
+| Exposicion accidental | Acceso no deseado al prototipo. | Default local `127.0.0.1`; Docker explicito en `8050`; login single-user. | Produccion requiere HTTPS y politicas de red. |
+| Credenciales compartidas | Un unico usuario no permite atribucion por operador. | Cookie firmada y credencial configurable por entorno. | Agregar usuarios, roles y auditoria antes de uso multiusuario. |
 | Datos sensibles | Direcciones/GPS podrian exponer privacidad. | Evidencia demo y recomendacion de memoria por zona. | Politica formal para datos reales. |
 | JSON malformado o grande | Degradacion o errores inseguros. | `/api/v1` limita 1 MiB y usa errores tipados. | Migrar rutas legacy restantes. |
 | Excepciones inseguras | Fuga de detalles internos. | Errores conocidos se mapean a respuestas estables. | Politica completa de errores productivos. |
@@ -456,8 +460,8 @@ Esto no invalida la publicacion del MVP porque el proyecto conserva seeds reprod
 
 Limitaciones intencionales:
 
-- No hay login ni roles.
 - No hay panel admin.
+- No hay roles, registro de usuarios ni recuperacion de clave.
 - La gestion de datos demo se hace por seeds JSON.
 - La UI legacy todavia muestra algunas trazas descriptivas.
 - No se implementa aprendizaje semantico completo de produccion.
@@ -477,7 +481,7 @@ Estas limitaciones son coherentes con el objetivo: demostrar orquestacion, memor
 7. Completar memoria episodica y promocion semantica con escenarios comparativos memoria on/off.
 8. Mejorar accesibilidad WCAG: foco visible, labels semanticos, navegacion por teclado y mensajes de error legibles.
 9. Evaluar Ollama como adaptador local opcional de `ANALYZE`, manteniendo validacion Pydantic y reglas deterministicas.
-10. Agregar autenticacion solo si el sistema evoluciona a uso multiusuario.
+10. Expandir autenticacion solo si el sistema evoluciona a uso multiusuario.
 
 ## 18. Conclusiones
 

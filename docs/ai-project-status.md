@@ -54,6 +54,7 @@ cold start before judging the deployment.
 | LLM/SLM local reflection | Done | Included in final report. |
 | Guided demo flow | Done | Header control resets seeded data and runs a guided dispatch review. |
 | Hard-rule evidence in UI | Done | Simulation exposes all technicians with pass/fail checks before score. |
+| Single-user access control | Done | UI and API protected by a signed session cookie. Default demo user: `tecnico-fisca`. |
 
 ## Stack
 
@@ -81,6 +82,13 @@ Open:
 
 ```text
 http://127.0.0.1:8050
+```
+
+Default demo login:
+
+```text
+User: tecnico-fisca
+Password: smart2026AI
 ```
 
 Stop:
@@ -148,8 +156,8 @@ Important directories:
 
 ## Data Loading
 
-The project has no login or admin panel by design. Demo information is loaded
-from versioned seed files:
+The project has single-user login for the demo, but no admin panel or public
+data-management UI. Demo information is loaded from versioned seed files:
 
 - `data/seeds/technicians.json`
 - `data/seeds/orders.json`
@@ -209,10 +217,30 @@ tests/unit/test_project_metadata.py
 docker build -t smart-dispatch-ia:guided-demo .
 ```
 
+Recent checks performed after single-user login implementation:
+
+- Browser routes without a session redirect to `/login`.
+- API routes without a session return `401` with `authentication_required`.
+- Valid login sets a signed `smart_dispatch_session` cookie.
+- Logout clears the session cookie.
+- Docker HTTP verification passed on port `8050`: login page `200`, protected
+  API without session `401`, valid login `200`, protected API with cookie `200`.
+- Focused auth/runtime/compatibility checks passed:
+
+```text
+tests/integration/test_auth.py
+tests/unit/test_runtime.py
+tests/integration/test_legacy_compatibility.py
+tests/integration/test_legacy_eligibility_regression.py
+tests/unit/test_repository_hygiene.py
+tests/unit/test_project_metadata.py
+29 passed
+```
+
 ## Known Limits
 
-- No authentication or roles.
 - No admin panel.
+- No roles, registration, password reset, or multi-user administration.
 - Runtime persistence on free hosting can be ephemeral.
 - The frontend still uses some legacy compatibility routes, now with richer evidence for the guided demo.
 - The canonical `/api/v1` backend is stronger than the current UI presentation.
@@ -232,7 +260,7 @@ Only do these if the user asks for more after the final delivery:
 4. Complete episodic memory and semantic promotion with memory on/off comparison scenarios.
 5. Improve accessibility with visible focus, semantic labels, keyboard navigation, and readable errors.
 6. Add optional Ollama adapter for the `ANALYZE` stage.
-7. Add authentication only if the product becomes multi-user.
+7. Expand authentication only if the product becomes multi-user.
 
 ## Agent Rules
 

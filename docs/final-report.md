@@ -133,7 +133,10 @@ Cada componente se normaliza entre 0 y 100. Los calculos autoritativos usan `Dec
 
 ## 8. Memoria Persistente Y Datos
 
-El sistema utiliza datos semilla reproducibles y persistencia SQLite. No se implemento login ni panel de administracion porque el alcance actual es un MVP de un solo usuario. La decision se documenta como limite y no como omision accidental.
+El sistema utiliza datos semilla reproducibles, persistencia SQLite y login
+single-user para proteger la UI y las rutas API. No incluye panel de
+administracion ni roles; la decision se documenta como limite operativo y no
+como omision accidental.
 
 Estrategia de datos:
 
@@ -264,8 +267,8 @@ Riesgos y mitigaciones:
 
 | Riesgo | Mitigacion actual |
 | --- | --- |
-| Exposicion accidental | Default local `127.0.0.1`; Docker/deploy explicitamente configurados. |
-| Falta de autenticacion | Declarado fuera de alcance productivo; MVP single-user. |
+| Exposicion accidental | Default local `127.0.0.1`; Docker/deploy explicitamente configurados; login single-user. |
+| Credenciales compartidas | Cookie firmada y credencial configurable; usuarios/roles quedan para una etapa multiusuario. |
 | Datos sensibles | Se evita loguear direcciones completas o GPS exacto en evidencia estructurada futura. |
 | Payloads malformados | Middleware canonico con limite 1 MiB y errores tipados en `/api/v1`. |
 | Excepciones inseguras | Mapeo a respuestas seguras para errores conocidos. |
@@ -354,8 +357,8 @@ Esto no invalida la publicacion del MVP, porque el proyecto conserva seeds repro
 
 Limitaciones intencionales:
 
-- No hay login ni roles.
 - No hay panel admin.
+- No hay roles, registro de usuarios ni recuperacion de clave.
 - La gestion de datos demo se hace por seeds JSON.
 - La UI legacy todavia muestra algunas trazas descriptivas.
 - No se implementa aprendizaje semantico completo de produccion.
@@ -377,7 +380,7 @@ Prioridades futuras:
 7. Completar memoria episodica y promocion semantica con escenarios comparativos memoria on/off.
 8. Mejorar accesibilidad WCAG: foco visible, labels semanticos, navegacion por teclado y mensajes de error legibles.
 9. Evaluar Ollama como adaptador local opcional de `ANALYZE`, manteniendo validacion Pydantic y reglas deterministicas.
-10. Agregar autenticacion solo si el sistema evoluciona a uso multiusuario.
+10. Expandir autenticacion solo si el sistema evoluciona a uso multiusuario.
 
 ## 19. Conclusiones
 

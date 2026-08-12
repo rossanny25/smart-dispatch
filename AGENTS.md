@@ -1,8 +1,7 @@
 # AI Agent Handoff
 
-This repository is an educational field-service dispatch simulator called
-Smart Dispatch IA. Read this file before making code, documentation, or
-deployment changes.
+This repository is a field-service dispatch simulator called Smart Dispatch IA.
+Read this file before making code, documentation, or deployment changes.
 
 ## Read First
 
@@ -21,6 +20,7 @@ deployment changes.
 - Local Docker demo: `http://127.0.0.1:8050`.
 - Published demo: `https://smart-dispatch-q4xk.onrender.com`.
 - GitHub repository: `https://github.com/rossanny25/smart-dispatch`.
+- Demo access: user `tecnico-fisca`, password `smart2026AI`.
 
 ## Critical Rules
 
@@ -34,7 +34,8 @@ deployment changes.
 - Use `Decimal` for score/confidence arithmetic.
 - Use Pydantic contracts with strict boundary validation.
 - Do not move the project to React, Express, or another stack unless the user explicitly asks.
-- Do not add login/admin just because production apps usually have it; this MVP intentionally documents them as out of scope.
+- Keep authentication single-user unless the user explicitly asks for roles,
+  registration, or an admin panel.
 - Do not remove seeds, screenshots, logs, or final-report files. They are product review evidence.
 - Do not revert user changes or unrelated worktree changes.
 
@@ -50,6 +51,12 @@ Open:
 
 ```text
 http://127.0.0.1:8050
+```
+
+Default login:
+
+```text
+tecnico-fisca / smart2026AI
 ```
 
 Local development:
@@ -87,7 +94,7 @@ python3 tools/build_final_report_pdf.py
 - `docs/evidence/api-orders-after-session.json`
 - `docs/evidence/docker-session.log`
 
-## Current Academic Delivery Status
+## Current Delivery Status
 
 The final-cycle delivery is functionally complete:
 
@@ -98,6 +105,7 @@ The final-cycle delivery is functionally complete:
 - Final Markdown report exists.
 - Final PDF report exists and includes screenshots.
 - README and runbook document how to evaluate the project.
+- Single-user login protects the browser UI and API.
 - Guided demo flow exists in the UI.
 - Hard-rule evidence is visible before score in the recommendation panel.
 

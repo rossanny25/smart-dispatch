@@ -6,6 +6,8 @@ from typing import Mapping
 
 import pytest
 
+from app.auth import DEFAULT_USERNAME, SESSION_COOKIE, create_session_token
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -15,6 +17,7 @@ def request_asgi(
     path: str,
     *,
     request_headers: Mapping[str, str] | None = None,
+    authenticated: bool = True,
 ) -> tuple[int, dict[str, str], bytes]:
     messages: list[dict[str, object]] = []
     request_sent = False
@@ -29,6 +32,11 @@ def request_asgi(
     async def send(message: dict[str, object]) -> None:
         messages.append(message)
 
+    headers = dict(request_headers or {})
+    has_cookie = any(key.lower() == "cookie" for key in headers)
+    if authenticated and not has_cookie:
+        headers["cookie"] = f"{SESSION_COOKIE}={create_session_token(DEFAULT_USERNAME)}"
+
     scope = {
         "type": "http",
         "asgi": {"version": "3.0"},
@@ -40,7 +48,7 @@ def request_asgi(
         "query_string": b"",
         "headers": [
             (key.lower().encode(), value.encode())
-            for key, value in (request_headers or {}).items()
+            for key, value in headers.items()
         ],
         "client": ("127.0.0.1", 12345),
         "server": ("127.0.0.1", 8000),
