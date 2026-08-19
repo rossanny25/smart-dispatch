@@ -72,11 +72,15 @@ Docker, Render y documentacion tecnica de producto.
 - [x] Agregar idempotencia basica en creacion/edicion de usuarios.
 - [x] Configurar secreto de sesion generado y cookie segura para Render.
 - [x] Limitar payload de login para reducir abuso.
-- [ ] Crear fichas completas de tecnicos.
-- [ ] Agregar horarios y disponibilidad editable por tecnico.
+- [x] Persistir tecnicos operativos en SQLite.
+- [x] Crear panel admin para crear y editar tecnicos.
+- [x] Agregar horarios y disponibilidad editable por tecnico.
+- [x] Mostrar criterios de seleccion, reglas duras y efecto de memoria en UI.
+- [x] Rechazar solicitudes de servicio con texto no entendible.
+- [ ] Crear fichas completas de tecnicos con contacto/documentos/auditoria.
 - [ ] Agregar calendario de visitas por tecnico.
 - [ ] Agregar vista de mapa sin dependencia paga.
-- [ ] Migrar tecnicos/ordenes demo desde JSON bootstrap a datos operativos SQLite.
+- [ ] Migrar ordenes demo desde JSON bootstrap a datos operativos SQLite.
 - [ ] Mostrar `DispatchRun` canonico de `/api/v1` en el frontend.
 - [ ] Implementar decision humana y outcome completo sobre API canonica.
 - [ ] Mover endpoints admin al sobre canonico completo de `/api/v1`.

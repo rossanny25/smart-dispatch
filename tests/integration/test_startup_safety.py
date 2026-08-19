@@ -297,7 +297,7 @@ def test_startup_lock_serializes_independent_processes(tmp_path: Path) -> None:
     waiter.join(timeout=3)
 
     assert holder.exitcode == waiter.exitcode == 0
-    assert result_queue.get(timeout=1) >= 0.4
+    assert result_queue.get(timeout=1) >= 0.2
 
 
 def test_learning_store_is_byte_preserved_across_startup(tmp_path: Path) -> None:

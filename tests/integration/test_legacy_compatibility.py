@@ -1,10 +1,31 @@
 import json
 from pathlib import Path
 
+from app.auth import DEFAULT_PASSWORD, DEFAULT_USERNAME
+from app.main import create_app
+from app.startup import prepare_runtime
 from tests.asgi_client import request_asgi
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _app_with_runtime(tmp_path: Path):
+    database_path = tmp_path / "runtime.db"
+    prepare_runtime(database_path)
+    return create_app(database_path=database_path)
+
+
+def _admin_cookie(app: object) -> str:
+    status, headers, _ = request_asgi(
+        app,
+        "/auth/login",
+        method="POST",
+        json_body={"username": DEFAULT_USERNAME, "password": DEFAULT_PASSWORD},
+        authenticated=False,
+    )
+    assert status == 200
+    return headers["set-cookie"].split(";", 1)[0]
 
 
 def test_all_current_legacy_routes_remain_reachable(
@@ -15,7 +36,7 @@ def test_all_current_legacy_routes_remain_reachable(
     learning_store.write_bytes((PROJECT_ROOT / "data" / "learning_store.json").read_bytes())
     monkeypatch.setenv("SMART_DISPATCH_LEARNING_STORE_PATH", str(learning_store))
 
-    from app.main import app
+    app = _app_with_runtime(tmp_path)
 
     technicians_status, _, technicians_body = request_asgi(app, "/api/technicians")
     orders_status, _, orders_body = request_asgi(app, "/api/orders")
@@ -75,7 +96,7 @@ def test_legacy_simulation_returns_hard_rule_evidence_for_all_technicians(
     monkeypatch.setenv("SMART_DISPATCH_LEARNING_STORE_PATH", str(learning_store))
 
     from app.adapters.legacy import compatibility
-    from app.main import app
+    app = _app_with_runtime(tmp_path)
 
     compatibility.technicians[:] = compatibility.load_seed_list(
         compatibility.SEED_TECHNICIANS_PATH
@@ -129,21 +150,28 @@ def test_legacy_simulation_does_not_force_recommendation_when_none_are_feasible(
     learning_store.write_bytes((PROJECT_ROOT / "data" / "learning_store.json").read_bytes())
     monkeypatch.setenv("SMART_DISPATCH_LEARNING_STORE_PATH", str(learning_store))
 
-    from app.adapters.legacy import compatibility
-    from app.main import app
-
-    original_technicians = [item.copy() for item in compatibility.technicians]
-    try:
-        for technician in compatibility.technicians:
-            technician["certifications"] = []
-        status, _, body = request_asgi(
+    app = _app_with_runtime(tmp_path)
+    cookie = _admin_cookie(app)
+    _, _, technicians_body = request_asgi(app, "/api/technicians")
+    for technician in json.loads(technicians_body):
+        patch_status, _, _ = request_asgi(
             app,
-            "/api/dispatch/simulate",
-            method="POST",
-            json_body={"order_id": "order_001"},
+            f"/api/technicians/{technician['id']}",
+            method="PATCH",
+            headers={
+                "cookie": cookie,
+                "idempotency-key": f"remove-skills-{technician['id']}",
+            },
+            json_body={"certifications": []},
+            authenticated=False,
         )
-    finally:
-        compatibility.technicians[:] = original_technicians
+        assert patch_status == 200
+    status, _, body = request_asgi(
+        app,
+        "/api/dispatch/simulate",
+        method="POST",
+        json_body={"order_id": "order_001"},
+    )
 
     payload = json.loads(body)
     assert status == 200
@@ -154,6 +182,276 @@ def test_legacy_simulation_does_not_force_recommendation_when_none_are_feasible(
         for candidate in payload["candidates"]
     )
     assert all(candidate["score"] is None for candidate in payload["candidates"])
+
+
+def test_technicians_are_bootstrapped_from_sqlite_runtime(tmp_path: Path) -> None:
+    app = _app_with_runtime(tmp_path)
+
+    status, _, body = request_asgi(app, "/api/technicians")
+
+    technicians = json.loads(body)
+    assert status == 200
+    assert len(technicians) == 5
+    assert all("shift" in technician for technician in technicians)
+    assert all("created_at" in technician for technician in technicians)
+
+
+def test_admin_can_create_and_edit_service_technicians(tmp_path: Path) -> None:
+    app = _app_with_runtime(tmp_path)
+    cookie = _admin_cookie(app)
+
+    create_status, _, create_body = request_asgi(
+        app,
+        "/api/technicians",
+        method="POST",
+        headers={"cookie": cookie, "idempotency-key": "create-marina"},
+        json_body={
+            "name": "Marina Ruiz",
+            "status": "disponible",
+            "zone": "Palermo",
+            "certifications": ["Gasista Matriculado"],
+            "shift": {"start": "10:00", "end": "18:00"},
+            "active_workload_hours": 1.0,
+            "rating": 4.4,
+            "ppe": ["detector de gas"],
+            "gps_coordinates": {"lat": -34.58, "lng": -58.42},
+        },
+        authenticated=False,
+    )
+    created = json.loads(create_body)["technician"]
+
+    update_status, _, update_body = request_asgi(
+        app,
+        f"/api/technicians/{created['id']}",
+        method="PATCH",
+        headers={"cookie": cookie, "idempotency-key": "update-marina"},
+        json_body={
+            "certifications": ["Gasista Matriculado", "Técnico HVAC"],
+            "shift": {"start": "09:00", "end": "17:00"},
+            "active_workload_hours": 2.5,
+        },
+        authenticated=False,
+    )
+
+    assert create_status == 201
+    assert created["name"] == "Marina Ruiz"
+    assert update_status == 200
+    updated = json.loads(update_body)["technician"]
+    assert updated["shift"] == {"start": "09:00", "end": "17:00"}
+    assert "Técnico HVAC" in updated["certifications"]
+
+
+def test_non_admin_cannot_write_service_technicians(tmp_path: Path) -> None:
+    app = _app_with_runtime(tmp_path)
+    admin_cookie = _admin_cookie(app)
+    request_asgi(
+        app,
+        "/api/v1/admin/users",
+        method="POST",
+        headers={"cookie": admin_cookie, "idempotency-key": "create-tech-user"},
+        json_body={
+            "username": "tecnico-ui",
+            "display_name": "Tecnico UI",
+            "role": "tecnico",
+            "password": "tecnico2026",
+        },
+        authenticated=False,
+    )
+    status, headers, _ = request_asgi(
+        app,
+        "/auth/login",
+        method="POST",
+        json_body={"username": "tecnico-ui", "password": "tecnico2026"},
+        authenticated=False,
+    )
+    assert status == 200
+    technician_cookie = headers["set-cookie"].split(";", 1)[0]
+
+    status, _, body = request_asgi(
+        app,
+        "/api/technicians",
+        method="POST",
+        headers={"cookie": technician_cookie, "idempotency-key": "blocked-tech-write"},
+        json_body={
+            "name": "Sin Permiso",
+            "status": "disponible",
+            "zone": "Centro",
+            "certifications": [],
+            "shift": {"start": "09:00", "end": "17:00"},
+            "active_workload_hours": 0,
+            "rating": 4,
+        },
+        authenticated=False,
+    )
+
+    assert status == 403
+    assert json.loads(body) == {"error": "admin_required"}
+
+    reset_status, _, reset_body = request_asgi(
+        app,
+        "/api/reset",
+        method="POST",
+        headers={"cookie": technician_cookie},
+        json_body={},
+        authenticated=False,
+    )
+
+    assert reset_status == 403
+    assert json.loads(reset_body) == {"error": "admin_required"}
+
+
+def test_edited_technician_roster_changes_dispatch_eligibility(tmp_path: Path) -> None:
+    app = _app_with_runtime(tmp_path)
+    cookie = _admin_cookie(app)
+
+    status, _, body = request_asgi(app, "/api/technicians")
+    tech_03 = next(item for item in json.loads(body) if item["id"] == "tech_03")
+    assert status == 200
+
+    patch_status, _, patch_body = request_asgi(
+        app,
+        "/api/technicians/tech_03",
+        method="PATCH",
+        headers={"cookie": cookie, "idempotency-key": "remove-tech-03-skills"},
+        json_body={"certifications": []},
+        authenticated=False,
+    )
+    assert patch_status == 200, patch_body
+    simulate_status, _, simulate_body = request_asgi(
+        app,
+        "/api/dispatch/simulate",
+        method="POST",
+        json_body={"order_id": "order_001"},
+    )
+
+    candidate = next(
+        item for item in json.loads(simulate_body)["candidates"] if item["technician_id"] == "tech_03"
+    )
+    assert simulate_status == 200
+    assert candidate["validation_status"] == "rechazado"
+    assert any(check["key"] == "certifications" for check in candidate["hard_rule_checks"])
+
+
+def test_unclear_order_text_is_rejected_before_insertion(tmp_path: Path) -> None:
+    app = _app_with_runtime(tmp_path)
+
+    before_status, _, before_body = request_asgi(app, "/api/orders")
+    status, _, body = request_asgi(
+        app,
+        "/api/orders",
+        method="POST",
+        json_body={
+            "raw_text": "asdfasdf",
+            "address": "sdfasfasfsa",
+            "zone": "Palermo",
+        },
+    )
+    after_status, _, after_body = request_asgi(app, "/api/orders")
+
+    assert before_status == after_status == 200
+    assert status == 422
+    assert json.loads(body)["error"] == "Solicitud no entendida"
+    assert json.loads(before_body) == json.loads(after_body)
+
+
+def test_technician_create_requires_and_replays_idempotency_key(tmp_path: Path) -> None:
+    app = _app_with_runtime(tmp_path)
+    cookie = _admin_cookie(app)
+    payload = {
+        "name": "Tecnico Idempotente",
+        "status": "disponible",
+        "zone": "Centro",
+        "certifications": ["Redes WAN"],
+        "shift": {"start": "09:00", "end": "17:00"},
+        "active_workload_hours": 1,
+        "rating": 4,
+        "gps_coordinates": {"lat": -34.6, "lng": -58.38},
+    }
+
+    missing_status, _, missing_body = request_asgi(
+        app,
+        "/api/technicians",
+        method="POST",
+        headers={"cookie": cookie},
+        json_body=payload,
+        authenticated=False,
+    )
+    first_status, _, first_body = request_asgi(
+        app,
+        "/api/technicians",
+        method="POST",
+        headers={"cookie": cookie, "idempotency-key": "create-idempotent-tech"},
+        json_body=payload,
+        authenticated=False,
+    )
+    second_status, _, second_body = request_asgi(
+        app,
+        "/api/technicians",
+        method="POST",
+        headers={"cookie": cookie, "idempotency-key": "create-idempotent-tech"},
+        json_body=payload,
+        authenticated=False,
+    )
+    conflict_payload = {**payload, "name": "Tecnico Idempotente Alterado"}
+    conflict_status, _, conflict_body = request_asgi(
+        app,
+        "/api/technicians",
+        method="POST",
+        headers={"cookie": cookie, "idempotency-key": "create-idempotent-tech"},
+        json_body=conflict_payload,
+        authenticated=False,
+    )
+
+    assert missing_status == 422
+    assert json.loads(missing_body)["error"] == "idempotency_key_required"
+    assert first_status == second_status == 201
+    assert json.loads(second_body) == json.loads(first_body)
+    assert conflict_status == 409
+    assert json.loads(conflict_body)["error"] == "idempotency_conflict"
+
+
+def test_technician_payload_rejects_non_finite_and_unknown_fields(tmp_path: Path) -> None:
+    app = _app_with_runtime(tmp_path)
+    cookie = _admin_cookie(app)
+
+    status, _, body = request_asgi(
+        app,
+        "/api/technicians",
+        method="POST",
+        headers={"cookie": cookie, "idempotency-key": "invalid-tech"},
+        json_body={
+            "name": "Tecnico Invalido",
+            "status": "disponible",
+            "zone": "Centro",
+            "certifications": [123],
+            "shift": {"start": "09:00", "end": "17:00"},
+            "active_workload_hours": "NaN",
+            "rating": 4,
+            "unknown": True,
+        },
+        authenticated=False,
+    )
+
+    assert status == 422
+    assert json.loads(body)["error"] == "technician_invalid"
+
+
+def test_terse_known_order_text_is_accepted_with_numbered_address(tmp_path: Path) -> None:
+    app = _app_with_runtime(tmp_path)
+
+    status, _, body = request_asgi(
+        app,
+        "/api/orders",
+        method="POST",
+        json_body={
+            "raw_text": "fuga gas",
+            "address": "Sucursal Palermo 123",
+            "zone": "Palermo",
+        },
+    )
+
+    assert status == 201
+    assert json.loads(body)["structured_data"]["category"] == "Gas"
 
 
 def test_hard_rules_fail_closed_for_required_ppe_and_invalid_shift() -> None:
@@ -232,7 +530,6 @@ def test_default_confirmation_writes_runtime_copy_and_preserves_seed(
     monkeypatch,
 ) -> None:
     from app.adapters.legacy import compatibility
-    from app.main import app
 
     seed_path = tmp_path / "learning_store.json"
     runtime_path = tmp_path / "learning_store.runtime.json"
@@ -241,6 +538,7 @@ def test_default_confirmation_writes_runtime_copy_and_preserves_seed(
     monkeypatch.delenv("SMART_DISPATCH_LEARNING_STORE_PATH", raising=False)
     monkeypatch.setattr(compatibility, "SEED_LEARNING_STORE_PATH", seed_path)
     monkeypatch.setattr(compatibility, "DEFAULT_LEARNING_STORE_PATH", runtime_path)
+    app = _app_with_runtime(tmp_path)
 
     status, _, body = request_asgi(
         app,

@@ -3,7 +3,7 @@ services:
     name: smart-dispatch
     runtime: docker
     plan: free
-    branch: main
+    branch: changes
     healthCheckPath: /healthz
     envVars:
       - key: SMART_DISPATCH_HOST

@@ -1,15 +1,30 @@
 """Mechanical FastAPI relocation of the original ``server.py`` API behavior."""
 
 from datetime import UTC, datetime
+from decimal import Decimal, InvalidOperation
 import json
 import os
 from pathlib import Path
+import re
+import sqlite3
 from typing import Any
+import unicodedata
+from uuid import uuid4
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from app.adapters.persistence.database import PROJECT_ROOT
+from app.auth import (
+    load_idempotency_record,
+    request_hash,
+    request_is_admin,
+    store_idempotency_record,
+)
+from app.adapters.persistence.database import (
+    PROJECT_ROOT,
+    connect_sqlite,
+    resolve_database_path,
+)
 
 
 router = APIRouter(include_in_schema=False)
@@ -19,6 +34,52 @@ SEED_TECHNICIANS_PATH = SEED_DATA_DIR / "technicians.json"
 SEED_ORDERS_PATH = SEED_DATA_DIR / "orders.json"
 SEED_LEARNING_STORE_PATH = PROJECT_ROOT / "data" / "learning_store.json"
 DEFAULT_LEARNING_STORE_PATH = PROJECT_ROOT / "data" / "learning_store.runtime.json"
+ALLOWED_TECHNICIAN_STATUSES = {"disponible", "ocupado", "fuera_servicio"}
+KNOWN_SERVICE_TERMS = {
+    "agua",
+    "aire",
+    "averia",
+    "avería",
+    "bano",
+    "baño",
+    "caldera",
+    "cano",
+    "caño",
+    "climatiz",
+    "corte",
+    "electric",
+    "fibra",
+    "frio",
+    "frío",
+    "fuga",
+    "gas",
+    "hvac",
+    "internet",
+    "inund",
+    "luz",
+    "plomer",
+    "red",
+    "regulador",
+    "tension",
+    "tensión",
+    "termica",
+    "térmica",
+    "urgente",
+}
+TECHNICIAN_CREATE_FIELDS = {
+    "id",
+    "name",
+    "status",
+    "zone",
+    "certifications",
+    "shift",
+    "active_workload_hours",
+    "rating",
+    "ppe",
+    "gps_coordinates",
+}
+TECHNICIAN_UPDATE_FIELDS = TECHNICIAN_CREATE_FIELDS - {"id"}
+_database_path_override: Path | None = None
 
 
 def load_seed_list(path: Path) -> list[dict[str, Any]]:
@@ -42,6 +103,36 @@ ZONE_DISTANCES = {
     "Almagro": {"Almagro": 1.8, "Caballito": 3, "Centro": 4, "Palermo": 5, "Belgrano": 8},
     "Caballito": {"Caballito": 2, "Almagro": 3, "Palermo": 6, "Centro": 7, "Belgrano": 7},
 }
+
+
+class TechnicianValidationError(ValueError):
+    """Technician payload failed validation."""
+
+
+class TechnicianStoreUnavailable(RuntimeError):
+    """Technician SQLite store is not available for mutation."""
+
+
+def configure_database_path(database_path: str | Path | None = None) -> None:
+    global _database_path_override
+    _database_path_override = resolve_database_path(database_path)
+
+
+def _database_path() -> Path:
+    return _database_path_override or resolve_database_path()
+
+
+def _connect() -> sqlite3.Connection:
+    connection = connect_sqlite(_database_path())
+    connection.row_factory = sqlite3.Row
+    return connection
+
+
+def _technician_table_exists(connection: sqlite3.Connection) -> bool:
+    row = connection.execute(
+        "SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = 'service_technicians'"
+    ).fetchone()
+    return row is not None
 
 
 def resolve_learning_store_path() -> Path:
@@ -127,6 +218,371 @@ def write_learnings(learnings: list[dict[str, Any]]) -> None:
     resolve_learning_store_path().write_text(
         json.dumps(learnings, indent=2, ensure_ascii=False),
         encoding="utf-8",
+    )
+
+
+def _json_list(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        parts = [part.strip() for part in value.split(",")]
+        return [part for part in parts if part]
+    if not isinstance(value, list):
+        raise TechnicianValidationError("El campo debe ser una lista o texto separado por comas.")
+    if any(not isinstance(item, str) for item in value):
+        raise TechnicianValidationError("Los valores de lista deben ser texto.")
+    values = [str(item).strip() for item in value]
+    return [item for item in values if item]
+
+
+def _decimal_text(value: Any, *, field: str, minimum: Decimal, maximum: Decimal) -> str:
+    try:
+        number = Decimal(str(value))
+    except (InvalidOperation, ValueError) as error:
+        raise TechnicianValidationError(f"{field} debe ser numérico.") from error
+    if not number.is_finite():
+        raise TechnicianValidationError(f"{field} debe ser finito.")
+    if number < minimum or number > maximum:
+        raise TechnicianValidationError(f"{field} debe estar entre {minimum} y {maximum}.")
+    return format(number.quantize(Decimal("0.1")), "f")
+
+
+def _time_text(value: Any, *, field: str) -> str:
+    text = str(value or "").strip()
+    if not re.fullmatch(r"[0-2][0-9]:[0-5][0-9]", text):
+        raise TechnicianValidationError(f"{field} debe tener formato HH:MM.")
+    hour = int(text.split(":", 1)[0])
+    if hour > 23:
+        raise TechnicianValidationError(f"{field} debe tener formato HH:MM.")
+    return text
+
+
+def _gps_payload(value: Any) -> dict[str, float]:
+    if value is None:
+        return {"lat": 0.0, "lng": 0.0}
+    if not isinstance(value, dict):
+        raise TechnicianValidationError("gps_coordinates debe ser un objeto.")
+    try:
+        lat = float(value.get("lat", 0))
+        lng = float(value.get("lng", 0))
+    except (TypeError, ValueError) as error:
+        raise TechnicianValidationError("GPS debe contener lat/lng numéricos.") from error
+    if lat < -90 or lat > 90 or lng < -180 or lng > 180:
+        raise TechnicianValidationError("GPS está fuera de rango.")
+    return {"lat": lat, "lng": lng}
+
+
+def _validate_technician_payload(
+    payload: dict[str, Any],
+    *,
+    existing: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    allowed_fields = (
+        TECHNICIAN_UPDATE_FIELDS | {"id"} if existing else TECHNICIAN_CREATE_FIELDS
+    )
+    unknown_fields = set(payload) - allowed_fields
+    if unknown_fields:
+        raise TechnicianValidationError(
+            "Campos no permitidos: " + ", ".join(sorted(unknown_fields))
+        )
+    source = existing or {}
+    supplied_id = payload.get("id", source.get("id", f"tech_{uuid4().hex[:8]}"))
+    technician_id = str(supplied_id).strip()
+    if not re.fullmatch(r"tech_[A-Za-z0-9_-]{1,64}", technician_id):
+        raise TechnicianValidationError("id de técnico inválido.")
+    name = str(payload.get("name", source.get("name", ""))).strip()
+    if len(name) < 2 or len(name) > 120:
+        raise TechnicianValidationError("El nombre debe tener entre 2 y 120 caracteres.")
+    zone = str(payload.get("zone", source.get("zone", ""))).strip()
+    if len(zone) < 2 or len(zone) > 80:
+        raise TechnicianValidationError("La zona es requerida.")
+    status = str(payload.get("status", source.get("status", "disponible"))).strip()
+    if status not in ALLOWED_TECHNICIAN_STATUSES:
+        raise TechnicianValidationError("Estado de técnico inválido.")
+    shift = payload.get("shift", source.get("shift", {}))
+    if not isinstance(shift, dict):
+        raise TechnicianValidationError("El turno debe tener inicio y fin.")
+    return {
+        "id": technician_id,
+        "name": name,
+        "status": status,
+        "zone": zone,
+        "certifications": _json_list(
+            payload.get("certifications", source.get("certifications", []))
+        ),
+        "shift": {
+            "start": _time_text(shift.get("start"), field="Inicio de turno"),
+            "end": _time_text(shift.get("end"), field="Fin de turno"),
+        },
+        "active_workload_hours": float(
+            _decimal_text(
+                payload.get(
+                    "active_workload_hours",
+                    source.get("active_workload_hours", 0),
+                ),
+                field="Carga diaria",
+                minimum=Decimal("0"),
+                maximum=Decimal("16"),
+            )
+        ),
+        "rating": float(
+            _decimal_text(
+                payload.get("rating", source.get("rating", 4.5)),
+                field="Calificación",
+                minimum=Decimal("0"),
+                maximum=Decimal("5"),
+            )
+        ),
+        "ppe": _json_list(payload.get("ppe", source.get("ppe", []))),
+        "gps_coordinates": _gps_payload(
+            payload.get("gps_coordinates", source.get("gps_coordinates"))
+        ),
+    }
+
+
+def _row_to_technician(row: sqlite3.Row) -> dict[str, Any]:
+    certifications = json.loads(str(row["certifications_json"]))
+    ppe = json.loads(str(row["ppe_json"]))
+    gps = json.loads(str(row["gps_json"]))
+    if (
+        not isinstance(certifications, list)
+        or not isinstance(ppe, list)
+        or not isinstance(gps, dict)
+    ):
+        raise RuntimeError("Persisted technician row is corrupt.")
+    return {
+        "id": str(row["id"]),
+        "name": str(row["name"]),
+        "status": str(row["status"]),
+        "zone": str(row["zone"]),
+        "certifications": certifications,
+        "shift": {
+            "start": str(row["shift_start"]),
+            "end": str(row["shift_end"]),
+        },
+        "active_workload_hours": float(row["active_workload_hours"]),
+        "rating": float(row["rating"]),
+        "ppe": ppe,
+        "gps_coordinates": gps,
+        "created_at": str(row["created_at"]),
+        "updated_at": str(row["updated_at"]),
+    }
+
+
+def _technician_values(technician: dict[str, Any], now: str) -> tuple[object, ...]:
+    return (
+        technician["id"],
+        technician["name"],
+        technician["status"],
+        technician["zone"],
+        json.dumps(technician["certifications"], ensure_ascii=False, sort_keys=True),
+        technician["shift"]["start"],
+        technician["shift"]["end"],
+        float(technician["active_workload_hours"]),
+        float(technician["rating"]),
+        json.dumps(technician.get("ppe", []), ensure_ascii=False, sort_keys=True),
+        json.dumps(
+            technician.get("gps_coordinates", {"lat": 0.0, "lng": 0.0}),
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
+        now,
+        now,
+    )
+
+
+def bootstrap_service_technicians(
+    database_path: str | Path | None = None,
+) -> None:
+    if database_path is not None:
+        configure_database_path(database_path)
+    with _connect() as connection:
+        if not _technician_table_exists(connection):
+            raise RuntimeError("service_technicians table is not available.")
+        count = connection.execute("SELECT count(*) FROM service_technicians").fetchone()[0]
+        if count:
+            return
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        for item in load_seed_list(SEED_TECHNICIANS_PATH):
+            technician = _validate_technician_payload(item)
+            connection.execute(
+                """
+                INSERT INTO service_technicians (
+                    id, name, status, zone, certifications_json, shift_start,
+                    shift_end, active_workload_hours, rating, ppe_json, gps_json,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                _technician_values(technician, now),
+            )
+
+
+def list_service_technicians() -> list[dict[str, Any]]:
+    with _connect() as connection:
+        if not _technician_table_exists(connection):
+            return [item.copy() for item in technicians]
+        rows = connection.execute(
+            """
+            SELECT * FROM service_technicians
+            ORDER BY name ASC
+            """
+        ).fetchall()
+    return [_row_to_technician(row) for row in rows]
+
+
+def get_service_technician(technician_id: str) -> dict[str, Any] | None:
+    for technician in list_service_technicians():
+        if technician["id"] == technician_id:
+            return technician
+    return None
+
+
+def create_service_technician(payload: dict[str, Any]) -> dict[str, Any]:
+    technician = _validate_technician_payload(payload)
+    now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+    try:
+        with _connect() as connection:
+            if not _technician_table_exists(connection):
+                raise TechnicianStoreUnavailable("service_technicians table is not available.")
+            connection.execute(
+                """
+                INSERT INTO service_technicians (
+                    id, name, status, zone, certifications_json, shift_start,
+                    shift_end, active_workload_hours, rating, ppe_json, gps_json,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                _technician_values(technician, now),
+            )
+    except sqlite3.IntegrityError as error:
+        raise TechnicianValidationError("Ya existe un técnico con ese nombre o id.") from error
+    created = get_service_technician(technician["id"])
+    if created is None:
+        raise TechnicianValidationError("No se pudo guardar el técnico.")
+    return created
+
+
+def update_service_technician(
+    technician_id: str,
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    existing = get_service_technician(technician_id)
+    if existing is None:
+        raise KeyError(technician_id)
+    technician = _validate_technician_payload(
+        {**payload, "id": technician_id},
+        existing=existing,
+    )
+    now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+    try:
+        with _connect() as connection:
+            if not _technician_table_exists(connection):
+                raise TechnicianStoreUnavailable("service_technicians table is not available.")
+            connection.execute(
+                """
+                UPDATE service_technicians
+                SET name = ?, status = ?, zone = ?, certifications_json = ?,
+                    shift_start = ?, shift_end = ?, active_workload_hours = ?,
+                    rating = ?, ppe_json = ?, gps_json = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (
+                    technician["name"],
+                    technician["status"],
+                    technician["zone"],
+                    json.dumps(
+                        technician["certifications"],
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    ),
+                    technician["shift"]["start"],
+                    technician["shift"]["end"],
+                    float(technician["active_workload_hours"]),
+                    float(technician["rating"]),
+                    json.dumps(technician["ppe"], ensure_ascii=False, sort_keys=True),
+                    json.dumps(
+                        technician["gps_coordinates"],
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    ),
+                    now,
+                    technician_id,
+                ),
+            )
+    except sqlite3.IntegrityError as error:
+        raise TechnicianValidationError("Ya existe un técnico con ese nombre.") from error
+    updated = get_service_technician(technician_id)
+    if updated is None:
+        raise KeyError(technician_id)
+    return updated
+
+
+def reset_service_technicians() -> None:
+    with _connect() as connection:
+        if not _technician_table_exists(connection):
+            technicians[:] = load_seed_list(SEED_TECHNICIANS_PATH)
+            return
+        connection.execute("DELETE FROM service_technicians")
+    bootstrap_service_technicians()
+
+
+def _looks_like_actionable_order(raw_text: str, address: str) -> bool:
+    text = _normalize_text(raw_text)
+    normalized = re.sub(r"[^a-z0-9 ]+", " ", text)
+    words = [word for word in normalized.split() if len(word) >= 3]
+    has_known_term = any(
+        word in KNOWN_SERVICE_TERMS
+        or any(word.startswith(term) for term in KNOWN_SERVICE_TERMS if len(term) >= 5)
+        for word in words
+    )
+    has_sentence_shape = len(words) >= 2 and len(set(words)) >= 2
+    has_address_signal = bool(re.search(r"\d", address)) and len(address.strip()) >= 8
+    return has_known_term and has_sentence_shape and has_address_signal
+
+
+def _normalize_text(value: str) -> str:
+    decomposed = unicodedata.normalize("NFD", value.strip().lower())
+    return "".join(character for character in decomposed if unicodedata.category(character) != "Mn")
+
+
+def _replay_or_conflict(
+    request: Request,
+    route: str,
+    payload: dict[str, Any],
+) -> JSONResponse | None:
+    key = request.headers.get("idempotency-key", "")
+    if not key:
+        return JSONResponse({"error": "idempotency_key_required"}, status_code=422)
+    loaded = load_idempotency_record(
+        route=route,
+        idempotency_key=key,
+        request_hash_value=request_hash(payload),
+        database_path=_database_path(),
+    )
+    if loaded is None:
+        return None
+    if loaded == "conflict":
+        return JSONResponse({"error": "idempotency_conflict"}, status_code=409)
+    status_code, body = loaded
+    return JSONResponse(body, status_code=status_code)
+
+
+def _store_replayable_response(
+    request: Request,
+    route: str,
+    payload: dict[str, Any],
+    status_code: int,
+    body: dict[str, Any],
+) -> None:
+    store_idempotency_record(
+        route=route,
+        idempotency_key=request.headers.get("idempotency-key", ""),
+        request_hash_value=request_hash(payload),
+        response_status=status_code,
+        response_body=body,
+        database_path=_database_path(),
     )
 
 
@@ -276,7 +732,52 @@ async def parse_body(request: Request) -> dict[str, Any] | None:
 
 @router.get("/api/technicians")
 async def list_technicians() -> list[dict[str, Any]]:
-    return technicians
+    return list_service_technicians()
+
+
+@router.post("/api/technicians")
+async def create_technician(request: Request) -> JSONResponse:
+    if not request_is_admin(request, _database_path()):
+        return JSONResponse({"error": "admin_required"}, status_code=403)
+    body = await parse_body(request)
+    if body is None:
+        return JSONResponse({"error": "JSON inválido"}, status_code=400)
+    replay = _replay_or_conflict(request, "/api/technicians", body)
+    if replay is not None:
+        return replay
+    try:
+        technician = create_service_technician(body)
+    except TechnicianStoreUnavailable as error:
+        return JSONResponse({"error": "technician_store_unavailable", "message": str(error)}, status_code=503)
+    except TechnicianValidationError as error:
+        return JSONResponse({"error": "technician_invalid", "message": str(error)}, status_code=422)
+    response_body = {"technician": technician}
+    _store_replayable_response(request, "/api/technicians", body, 201, response_body)
+    return JSONResponse(response_body, status_code=201)
+
+
+@router.patch("/api/technicians/{technician_id}")
+async def update_technician(technician_id: str, request: Request) -> JSONResponse:
+    if not request_is_admin(request, _database_path()):
+        return JSONResponse({"error": "admin_required"}, status_code=403)
+    body = await parse_body(request)
+    if body is None:
+        return JSONResponse({"error": "JSON inválido"}, status_code=400)
+    route = f"/api/technicians/{technician_id}"
+    replay = _replay_or_conflict(request, route, body)
+    if replay is not None:
+        return replay
+    try:
+        technician = update_service_technician(technician_id, body)
+    except KeyError:
+        return JSONResponse({"error": "technician_not_found"}, status_code=404)
+    except TechnicianStoreUnavailable as error:
+        return JSONResponse({"error": "technician_store_unavailable", "message": str(error)}, status_code=503)
+    except TechnicianValidationError as error:
+        return JSONResponse({"error": "technician_invalid", "message": str(error)}, status_code=422)
+    response_body = {"technician": technician}
+    _store_replayable_response(request, route, body, 200, response_body)
+    return JSONResponse(response_body)
 
 
 @router.get("/api/orders")
@@ -290,19 +791,21 @@ async def list_memory() -> list[dict[str, Any]]:
 
 
 @router.post("/api/reset")
-async def reset_simulation() -> dict[str, str]:
+async def reset_simulation(request: Request) -> JSONResponse:
+    if not request_is_admin(request, _database_path()):
+        return JSONResponse({"error": "admin_required"}, status_code=403)
     init_storage()
-    technicians[:] = load_seed_list(SEED_TECHNICIANS_PATH)
+    reset_service_technicians()
     orders[:] = load_seed_list(SEED_ORDERS_PATH)
     if SEED_LEARNING_STORE_PATH.exists():
         write_learnings(load_seed_list(SEED_LEARNING_STORE_PATH))
     else:
         write_learnings(_seed_learnings())
-    return {"message": "Estado de simulación y memoria restablecidos."}
+    return JSONResponse({"message": "Estado de simulación y memoria restablecidos."})
 
 
 def classify_order(raw_text: str) -> tuple[str, int, list[str]]:
-    text = raw_text.lower()
+    text = _normalize_text(raw_text)
     if any(term in text for term in ("gas", "fuga", "caldera")):
         return "Gas", 5 if "fuga" in text else 4, ["Gasista Matriculado"]
     if any(term in text for term in ("luz", "electric", "térmica", "tensión")):
@@ -333,6 +836,17 @@ async def create_order(request: Request) -> JSONResponse:
             {"error": "Faltan campos (raw_text, address, zone)"},
             status_code=400,
         )
+    if not _looks_like_actionable_order(str(raw_text), str(address)):
+        return JSONResponse(
+            {
+                "error": "Solicitud no entendida",
+                "message": (
+                    "Describe una avería reconocible e incluye una dirección "
+                    "con numeración para poder inferir categoría, habilidad y zona."
+                ),
+            },
+            status_code=422,
+        )
 
     category, priority, required_skills = classify_order(str(raw_text))
     new_order = {
@@ -361,7 +875,7 @@ def build_candidates(
     learnings = read_learnings()
     candidates: list[dict[str, Any]] = []
     required = order["structured_data"]["required_skills"]
-    for technician in technicians:
+    for technician in list_service_technicians():
         distance_km = get_distance(technician["zone"], order["zone"])
         travel_minutes = distance_km * 4
         if environment.get("traffic") == "congestionado":
@@ -452,9 +966,10 @@ def evaluate_candidates(
     order: dict[str, Any],
 ) -> list[dict[str, Any]]:
     evaluated = []
+    roster = list_service_technicians()
     for candidate in candidates:
         technician = next(
-            item for item in technicians if item["id"] == candidate["technician_id"]
+            item for item in roster if item["id"] == candidate["technician_id"]
         )
         status = "aprobado"
         alerts: list[str] = []
@@ -542,15 +1057,15 @@ async def confirm_dispatch(request: Request) -> JSONResponse:
     if body is None:
         return JSONResponse({"error": "JSON inválido"}, status_code=400)
     order = next((item for item in orders if item["id"] == body.get("order_id")), None)
-    technician = next(
-        (item for item in technicians if item["id"] == body.get("technician_id")),
-        None,
-    )
+    technician = get_service_technician(str(body.get("technician_id", "")))
     if order is None or technician is None:
         return JSONResponse({"error": "Orden o Técnico no encontrado"}, status_code=404)
 
     order["status"] = "completada"
-    technician["active_workload_hours"] += 1.5
+    update_service_technician(
+        technician["id"],
+        {"active_workload_hours": technician["active_workload_hours"] + 1.5},
+    )
     learnings = read_learnings()
     new_learnings: list[dict[str, Any]] = []
     duration = body.get("duration_minutes")

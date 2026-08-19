@@ -21,6 +21,7 @@ Read this file before making code, documentation, or deployment changes.
 - Published demo: `https://smart-dispatch-q4xk.onrender.com`.
 - GitHub repository: `https://github.com/rossanny25/smart-dispatch`.
 - Demo/admin access: user `admin`, password `smart2026AI`.
+- Current deployment branch in `render.yaml`: `changes`.
 
 ## Critical Rules
 
@@ -107,6 +108,7 @@ The final-cycle delivery is functionally complete:
 - README and runbook document how to evaluate the project.
 - SQLite-backed users and roles protect the browser UI and API.
 - Basic user administration exists for admins.
+- SQLite-backed service technicians can be created and edited by admins.
 - Guided demo flow exists in the UI.
 - Hard-rule evidence is visible before score in the recommendation panel.
 

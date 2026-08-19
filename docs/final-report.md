@@ -135,12 +135,14 @@ Cada componente se normaliza entre 0 y 100. Los calculos autoritativos usan `Dec
 
 El sistema utiliza datos semilla reproducibles, persistencia SQLite, usuarios
 persistidos y login con roles basicos para proteger la UI y las rutas API.
-Incluye un panel admin para listar, crear y editar usuarios. Las fichas
-completas de tecnicos, calendarios y mapas quedan como evolucion operativa.
+Incluye paneles admin para listar, crear y editar usuarios y tecnicos. Los
+tecnicos operativos se inicializan desde seeds y luego se editan en SQLite,
+afectando la siguiente simulacion. Las fichas completas con documentos,
+calendarios y mapas quedan como evolucion operativa.
 
 Estrategia de datos:
 
-- Tecnicos demo: `data/seeds/technicians.json`.
+- Bootstrap de tecnicos: `data/seeds/technicians.json`.
 - Ordenes demo: `data/seeds/orders.json`.
 - Memoria inicial: `data/learning_store.json`.
 - Runtime SQLite local: `data/smart_dispatch.db`.
@@ -357,10 +359,12 @@ Esto no invalida la publicacion del MVP, porque el proyecto conserva seeds repro
 
 Limitaciones intencionales:
 
-- No hay fichas completas de tecnicos.
+- No hay fichas completas de tecnicos con documentos, contacto y auditoria,
+  aunque ya existe administracion operativa basica con turnos y certificaciones.
 - No hay calendario de visitas ni mapa operativo.
 - No hay registro publico de usuarios ni recuperacion de clave por email.
-- La gestion de datos demo se hace por seeds JSON.
+- Las ordenes demo siguen usando rutas de compatibilidad; los tecnicos ya usan
+  SQLite como fuente runtime.
 - La UI legacy todavia muestra algunas trazas descriptivas.
 - No se implementa aprendizaje semantico completo de produccion.
 - No se garantiza persistencia productiva en hosting gratuito.

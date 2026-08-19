@@ -17,7 +17,7 @@ from app.application.ports.persistence import PersistenceAdapterError
 from app.contracts.common import ErrorEnvelopeV1
 from app.contracts.work_orders import WorkOrderSuccessEnvelopeV1
 from app.main import create_app
-from app.migrations.runtime import upgrade_to_head
+from app.startup import prepare_runtime
 from tests.asgi_client import request_asgi
 
 
@@ -36,7 +36,7 @@ HEADERS = {
 @pytest.fixture
 def canonical_app(tmp_path: Path):
     database_path = tmp_path / "canonical.db"
-    upgrade_to_head(database_path)
+    prepare_runtime(database_path)
     return create_app(database_path=database_path), database_path
 
 

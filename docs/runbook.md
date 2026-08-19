@@ -31,6 +31,9 @@ https://smart-dispatch-q4xk.onrender.com
 ```
 
 Render Free can sleep after inactivity, so the first request can take around 50 seconds or more.
+The blueprint in `render.yaml` currently targets the `changes` branch. If the
+existing Render service still watches `main`, switch its branch to `changes`
+for this work or merge the branch before redeploying.
 
 The Compose service publishes container port `8050` to host port `8050`, so it should not collide with a different app already using `8000`.
 
@@ -92,6 +95,28 @@ Create and update operations under `/api/v1/admin/users` require
 the same payload replays the stored response; repeating it with a different
 payload returns an idempotency conflict.
 
+## Technician Administration
+
+Technicians are SQLite-backed runtime records. On a fresh database, startup
+seeds the roster from:
+
+```text
+data/seeds/technicians.json
+```
+
+After that, admin edits are stored in SQLite and immediately affect dispatch
+eligibility, scoring, hard-rule evidence, and override options. Use the in-app
+"Administracion de Tecnicos" panel as `admin / smart2026AI` to create or edit:
+
+- status
+- zone
+- certifications
+- shift start/end
+- active workload
+- rating
+- PPE
+- GPS lat/lng
+
 ## Verify The App Is Running
 
 Browser check:
@@ -147,7 +172,8 @@ Reset the running demo from the seed files:
 curl -X POST http://127.0.0.1:8050/api/reset
 ```
 
-Edit seed data here:
+Editable technician runtime data should be changed from the admin UI. Seed data
+remains here for reproducible bootstrap/reset:
 
 ```text
 data/seeds/technicians.json
@@ -281,10 +307,26 @@ Use this section as the running implementation log for the final report and proj
   deselected`; the deselected test is an existing timing-sensitive startup-lock
   assertion.
 
+### 2026-08-18 - Technician Operations In SQLite
+
+- Added SQLite `service_technicians` storage through Alembic revision
+  `20260818_0009`.
+- Startup now bootstraps technicians from `data/seeds/technicians.json` only
+  when the table is empty.
+- `/api/technicians` now reads runtime technician records from SQLite.
+- Added admin-only create/update technician routes under `/api/technicians`.
+- Dispatch simulation, confirmation, hard-rule evidence, and override options
+  use the current SQLite roster.
+- Added inline rejection for low-information service requests such as random
+  text without a recognizable incident/address.
+- Added visible UI explanations for hard rules, score/confidence, and semantic
+  memory sources.
+- Verified focused tests: `58 passed`.
+
 ## Next Technical Actions
 
-- Build technician profile pages with schedules and availability.
+- Expand technician profile pages with contact fields and audit history.
 - Add visit calendar views per technician.
 - Add no-cost map visualization.
-- Migrate demo technicians/orders from JSON bootstrap into SQLite operational records.
+- Migrate demo work orders from compatibility storage into SQLite operational records.
 - Add a dedicated seeded `NO_FEASIBLE_CANDIDATES` order.

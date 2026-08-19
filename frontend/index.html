@@ -89,6 +89,7 @@
                 </div>
               </div>
               <button type="submit" class="btn btn-primary"><i class="fa-solid fa-bolt"></i> Ingresar y Procesar con IA</button>
+              <div id="order-validation-message" class="form-validation-message" role="alert" hidden></div>
             </form>
           </div>
         </div>
@@ -108,6 +109,84 @@
               <div class="guided-step" data-guide-step="approve"><i class="fa-solid fa-circle-check"></i><span>Aprobar o cambiar</span></div>
             </div>
             <p class="guided-demo-message" id="guided-demo-message">Usa este recorrido para validar el flujo completo con datos reproducibles.</p>
+          </div>
+        </div>
+
+        <!-- Administración de técnicos -->
+        <div class="card card-glass admin-card" id="admin-tech-card" hidden>
+          <div class="card-header">
+            <h2><i class="fa-solid fa-user-gear"></i> Administración de Técnicos</h2>
+            <span class="badge badge-status-pendiente" id="admin-tech-state">Listo</span>
+          </div>
+          <div class="card-body">
+            <form id="admin-tech-form" class="admin-tech-form">
+              <input type="hidden" id="admin-tech-id">
+              <div class="admin-form-grid">
+                <div class="form-group">
+                  <label for="admin-tech-name">Nombre</label>
+                  <input type="text" id="admin-tech-name" autocomplete="off" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-status">Estado operativo</label>
+                  <select id="admin-tech-status" required>
+                    <option value="disponible">Disponible</option>
+                    <option value="ocupado">Ocupado</option>
+                    <option value="fuera_servicio">Fuera de servicio</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-zone">Zona base</label>
+                  <select id="admin-tech-zone" required>
+                    <option value="Palermo">Palermo</option>
+                    <option value="Centro">Centro</option>
+                    <option value="Belgrano">Belgrano</option>
+                    <option value="Almagro">Almagro</option>
+                    <option value="Caballito">Caballito</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-certifications">Certificaciones</label>
+                  <input type="text" id="admin-tech-certifications" placeholder="Gasista Matriculado, Técnico HVAC" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-shift-start">Inicio de turno</label>
+                  <input type="time" id="admin-tech-shift-start" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-shift-end">Fin de turno</label>
+                  <input type="time" id="admin-tech-shift-end" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-workload">Carga actual (hs)</label>
+                  <input type="number" id="admin-tech-workload" min="0" max="16" step="0.1" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-rating">Calificación</label>
+                  <input type="number" id="admin-tech-rating" min="0" max="5" step="0.1" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-ppe">EPP disponible</label>
+                  <input type="text" id="admin-tech-ppe" placeholder="Arnés, Casco dieléctrico">
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-gps-lat">GPS latitud</label>
+                  <input type="number" id="admin-tech-gps-lat" min="-90" max="90" step="0.0001" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-gps-lng">GPS longitud</label>
+                  <input type="number" id="admin-tech-gps-lng" min="-180" max="180" step="0.0001" required>
+                </div>
+              </div>
+              <div class="admin-actions">
+                <button type="submit" class="btn btn-primary" id="admin-save-tech">
+                  <i class="fa-solid fa-floppy-disk"></i> Guardar técnico
+                </button>
+                <button type="button" class="btn btn-secondary" id="admin-clear-tech">
+                  <i class="fa-solid fa-eraser"></i> Limpiar
+                </button>
+              </div>
+            </form>
+            <p class="admin-message" id="admin-tech-message" hidden></p>
           </div>
         </div>
 
@@ -260,6 +339,7 @@
                   <span class="stat-badge"><i class="fa-solid fa-route"></i> <span id="rec-travel-time">0</span> min viaje</span>
                   <span class="stat-badge"><i class="fa-solid fa-clock"></i> 90 min estimación</span>
                 </div>
+                <div class="decision-breakdown" id="decision-breakdown"></div>
               </div>
             </div>
 
@@ -267,6 +347,9 @@
               <div class="hard-rules-header">
                 <h3><i class="fa-solid fa-shield-halved"></i> Reglas duras antes del score</h3>
                 <span id="hard-rules-summary">Sin evaluación</span>
+              </div>
+              <div class="decision-explainer">
+                Primero se descartan técnicos por disponibilidad, certificaciones, turno, jornada, conducción y EPP. Solo los aptos reciben score; la confianza explica calidad de evidencia, no reemplaza el score.
               </div>
               <div class="hard-rules-list" id="hard-rules-list"></div>
             </div>
@@ -313,6 +396,9 @@
             <h2><i class="fa-solid fa-users"></i> Técnicos de Servicio de Campo</h2>
           </div>
           <div class="card-body">
+            <div class="ops-explainer">
+              <strong>Lectura operacional:</strong> cada tarjeta muestra estado, zona base, turno, carga acumulada, certificaciones, EPP y última coordenada conocida. El backend usa estos datos como restricciones antes de puntuar candidatos.
+            </div>
             <div id="technicians-grid" class="tech-grid">
               <!-- Cargado dinámicamente -->
             </div>
@@ -325,6 +411,9 @@
             <h2><i class="fa-solid fa-database"></i> Memoria Persistente de Aprendizaje Semántico</h2>
           </div>
           <div class="card-body">
+            <div class="ops-explainer">
+              <strong>Cómo aprende:</strong> esta memoria es un registro determinístico. Se alimenta de cierres de servicio y comentarios del despachador; puede sumar evidencia histórica al score, pero nunca habilita a un técnico que falló una regla dura.
+            </div>
             <div id="memory-list" class="memory-list">
               <!-- Cargado dinámicamente -->
             </div>

@@ -1,6 +1,7 @@
 from sqlalchemy import (
     CheckConstraint,
     Column,
+    Float,
     ForeignKey,
     ForeignKeyConstraint,
     Index,
@@ -85,6 +86,56 @@ app_users = Table(
     CheckConstraint(
         "password_hash LIKE 'pbkdf2_sha256$%'",
         name="ck_app_users_password_hash",
+    ),
+)
+
+service_technicians = Table(
+    "service_technicians",
+    metadata,
+    Column("id", Text, primary_key=True, nullable=False),
+    Column("name", Text, nullable=False),
+    Column("status", Text, nullable=False),
+    Column("zone", Text, nullable=False),
+    Column("certifications_json", Text, nullable=False),
+    Column("shift_start", Text, nullable=False),
+    Column("shift_end", Text, nullable=False),
+    Column("active_workload_hours", Float, nullable=False),
+    Column("rating", Float, nullable=False),
+    Column("ppe_json", Text, nullable=False),
+    Column("gps_json", Text, nullable=False),
+    Column("created_at", Text, nullable=False),
+    Column("updated_at", Text, nullable=False),
+    UniqueConstraint("name", name="uq_service_technicians_name"),
+    CheckConstraint(
+        "status IN ('disponible','ocupado','fuera_servicio')",
+        name="ck_service_technicians_status",
+    ),
+    CheckConstraint("length(name) BETWEEN 2 AND 120", name="ck_service_technicians_name"),
+    CheckConstraint("length(zone) BETWEEN 2 AND 80", name="ck_service_technicians_zone"),
+    CheckConstraint("active_workload_hours BETWEEN 0 AND 16", name="ck_service_technicians_workload"),
+    CheckConstraint("rating BETWEEN 0 AND 5", name="ck_service_technicians_rating"),
+    CheckConstraint(
+        "shift_start GLOB '[0-2][0-9]:[0-5][0-9]' AND substr(shift_start, 1, 2) < '24'",
+        name="ck_service_technicians_shift_start",
+    ),
+    CheckConstraint(
+        "shift_end GLOB '[0-2][0-9]:[0-5][0-9]' AND substr(shift_end, 1, 2) < '24'",
+        name="ck_service_technicians_shift_end",
+    ),
+    CheckConstraint(
+        "json_valid(certifications_json) AND json_type(certifications_json) = 'array'",
+        name="ck_service_technicians_certifications",
+    ),
+    CheckConstraint(
+        "json_valid(ppe_json) AND json_type(ppe_json) = 'array'",
+        name="ck_service_technicians_ppe",
+    ),
+    CheckConstraint("json_valid(gps_json)", name="ck_service_technicians_gps"),
+    CheckConstraint(
+        "json_type(gps_json) = 'object' "
+        "AND json_type(gps_json, '$.lat') IN ('integer','real') "
+        "AND json_type(gps_json, '$.lng') IN ('integer','real')",
+        name="ck_service_technicians_gps_shape",
     ),
 )
 

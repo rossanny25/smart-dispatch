@@ -39,6 +39,7 @@ from app.auth import (
 )
 from app.adapters.persistence.database import resolve_database_path
 from app.adapters.persistence.unit_of_work import SqliteUnitOfWorkFactory
+from app.adapters.legacy.compatibility import configure_database_path
 from app.adapters.legacy.compatibility import router as legacy_router
 from app.api.v1.errors import canonical_validation_exception_handler
 from app.api.v1.middleware import CanonicalCommandMiddleware
@@ -159,6 +160,7 @@ def create_app(
         clock=clock,
     )
     application.include_router(create_v1_router(command, dispatch_orchestrator))
+    configure_database_path(auth_database_path)
     application.include_router(legacy_router)
 
     @application.middleware("http")

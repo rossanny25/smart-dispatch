@@ -23,3 +23,22 @@
 - source_spec: none
   summary: Implement a complete forgot-password recovery flow.
   evidence: Split from the current request because real recovery requires email/token delivery decisions; this slice will expose a safe placeholder action only.
+
+## Deferred from: technician operations quality pass (2026-08-18)
+
+- source_spec: none
+  summary: Add technician visit calendars with day/week views and assignment history.
+  evidence: Split from the current request because calendars are independently shippable after editable technician profiles and schedules exist.
+- source_spec: none
+  summary: Add no-cost map visualization for technician zones and planned visits.
+  evidence: Split from the current request because map rendering requires separate coordinate, layout, and no-provider decisions.
+- source_spec: none
+  summary: Migrate work orders and dispatch execution fully from legacy seed routes to canonical SQLite operational records.
+  evidence: Split from the current request because technician CRUD can become real first while preserving the existing dispatch flow.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-technician-operations-sqlite-clarity.md`
+  summary: Make legacy confirmation atomic across order state, technician workload, and learning writes.
+  evidence: Review confirmed `confirm_dispatch` still spans compatibility memory, SQLite workload, and learning-file writes; this belongs with canonical dispatch/outcome migration.
+- source_spec: `_bmad-output/implementation-artifacts/spec-technician-operations-sqlite-clarity.md`
+  summary: Replace process-global compatibility database configuration with app-scoped dependency injection.
+  evidence: Review confirmed `configure_database_path` is shared across app instances; acceptable for current single-process runtime but brittle for future embedded tests/runtime reuse.

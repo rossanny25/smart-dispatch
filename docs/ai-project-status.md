@@ -55,6 +55,7 @@ cold start before judging the deployment.
 | Guided demo flow | Done | Header control resets seeded data and runs a guided dispatch review. |
 | Hard-rule evidence in UI | Done | Simulation exposes all technicians with pass/fail checks before score. |
 | User and role administration | Done | SQLite-backed users, admin bootstrap, role-aware login, and admin UI. |
+| Technician administration | Done | Runtime technicians are SQLite-backed and editable by admins. |
 
 ## Stack
 
@@ -156,10 +157,14 @@ Important directories:
 
 ## Data Loading
 
-The project has SQLite-backed users and basic role administration. Demo
-dispatch information is still loaded from versioned seed files:
+The project has SQLite-backed users, basic role administration, and editable
+service technicians. Technician records are bootstrapped once from:
 
 - `data/seeds/technicians.json`
+
+After startup, runtime technician edits are stored in SQLite and used by
+dispatch simulation immediately. Demo work orders still load from:
+
 - `data/seeds/orders.json`
 
 The legacy learning memory starts from:
@@ -172,7 +177,9 @@ Runtime data is written to ignored local files or Docker volumes:
 - `data/learning_store.runtime.json`
 - Docker volume `smart_dispatch_data`
 
-To edit demo data, update the seed JSON files and reset the demo.
+To edit technicians, log in as an admin and use the in-app technician
+administration panel. To reset technicians to the seed roster, use `/api/reset`
+or reset the Docker volume.
 
 ## Verification Already Performed
 
@@ -282,6 +289,8 @@ measures just below its `0.4s` threshold on this machine.
   main dispatch unit-of-work abstraction.
 - Admin endpoints return pragmatic JSON bodies; the deeper canonical command
   envelope can be added when the frontend migrates more `/api/v1` workflows.
+- Work orders still use compatibility route storage; technicians no longer use
+  JSON as their runtime source of truth.
 - The frontend still uses some legacy compatibility routes, now with richer evidence for the guided demo.
 - The canonical `/api/v1` backend is stronger than the current UI presentation.
 - No real GPS, traffic, weather, or LLM integration is connected.
@@ -294,10 +303,10 @@ Do not treat these as accidental omissions. They are documented MVP boundaries.
 
 Only do these if the user asks for more after the final delivery:
 
-1. Build technician profile pages with contact fields, skills, zones, schedules, and availability.
+1. Expand technician profiles with contact fields, documents, and audit history.
 2. Add visit calendar views per technician.
 3. Add no-cost map visualization for visits and zones.
-4. Migrate dispatch demo technicians/orders from JSON bootstrap into SQLite-backed operational records.
+4. Migrate demo work orders and dispatch execution fully into SQLite-backed operational records.
 5. Add a dedicated seeded `NO_FEASIBLE_CANDIDATES` order so the no-forced-recommendation state is easy to demo.
 6. Surface canonical `DispatchRun` state transitions from `/api/v1` in the frontend.
 7. Implement human decision and outcome commands on the canonical `/api/v1` flow.

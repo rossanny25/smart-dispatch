@@ -417,7 +417,7 @@ def build_story(styles):
     )
     story.append(
         p(
-            "El sistema incluye usuarios persistidos en SQLite, roles basicos y login con cookie de sesion firmada. Existe un panel admin para listar, crear y editar usuarios. La carga operativa de ordenes y tecnicos de demo todavia se realiza por seeds JSON versionados y por el flujo de aprendizaje del simulador.",
+            "El sistema incluye usuarios persistidos en SQLite, roles basicos y login con cookie de sesion firmada. Existen paneles admin para listar, crear y editar usuarios y tecnicos. Los tecnicos operativos se inicializan desde seeds solo cuando la tabla esta vacia; luego se editan en SQLite y afectan la siguiente simulacion de despacho.",
             styles,
         )
     )
@@ -557,10 +557,10 @@ def build_story(styles):
     story.append(
         bullet(
             [
-                "No hay fichas completas de tecnicos.",
+                "No hay fichas completas de tecnicos con documentos, contacto y auditoria, aunque ya existe administracion operativa basica con turnos y certificaciones.",
                 "No hay calendario de visitas ni mapa operativo.",
                 "No hay registro publico de usuarios ni recuperacion de clave por email.",
-                "La gestion de datos demo se hace por seeds JSON.",
+                "Las ordenes demo siguen usando rutas de compatibilidad; los tecnicos ya usan SQLite como fuente runtime.",
                 "La UI legacy todavia muestra algunas trazas descriptivas.",
                 "No se implementa aprendizaje semantico completo de produccion.",
                 "No se garantiza persistencia productiva en hosting gratuito.",
