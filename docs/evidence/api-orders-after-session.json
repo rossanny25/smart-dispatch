@@ -1,1 +1,56 @@
-[{"id":"order_001","client":"Cafetería Martinez Belgrano","address":"Av. Cabildo 2200, Belgrano, CABA","zone":"Belgrano","raw_text":"Tenemos un problema eléctrico generalizado en el salón. Saltó la térmica principal y no podemos encender las cafeteras ni las luces.","status":"completada","created_at":"2026-08-11T18:49:54.205224+00:00","structured_data":{"category":"Electricidad","subcategory":"Corte General de Energía","priority":4,"required_skills":["Técnico Electricista A"]}},{"id":"order_002","client":"Edificio Residencial Las Heras","address":"Av. Las Heras 3100, Palermo, CABA","zone":"Palermo","raw_text":"Fuga de gas detectada por el encargado en el regulador general de la entrada. Hay olor fuerte en el palier.","status":"pendiente","created_at":"2026-08-11T18:49:54.205236+00:00","structured_data":{"category":"Gas","subcategory":"Fuga en Regulador","priority":5,"required_skills":["Gasista Matriculado"]}}]
+[
+  {
+    "id": "order_002",
+    "client": "Edificio Residencial Las Heras",
+    "address": "Av. Las Heras 3100, Palermo, CABA",
+    "zone": "Palermo",
+    "raw_text": "Fuga de gas detectada por el encargado en el regulador general de la entrada. Hay olor fuerte en el palier.",
+    "status": "pendiente",
+    "created_at": "2026-08-11T18:05:00+00:00",
+    "updated_at": "2026-08-19T19:07:24.095522Z",
+    "structured_data": {
+      "category": "Gas",
+      "priority": 5,
+      "required_skills": [
+        "Gasista Matriculado"
+      ],
+      "subcategory": "Fuga en Regulador"
+    }
+  },
+  {
+    "id": "order_003",
+    "client": "Data Center Puerto Madero",
+    "address": "Av. Alicia Moreau de Justo 1848, Puerto Madero, CABA",
+    "zone": "Centro",
+    "raw_text": "Incidente crítico en sala eléctrica de media tensión. Se requiere operador certificado MT2 para intervenir tablero principal energizado.",
+    "status": "pendiente",
+    "created_at": "2026-08-11T18:10:00+00:00",
+    "updated_at": "2026-08-19T19:07:24.095522Z",
+    "structured_data": {
+      "category": "Media Tensión",
+      "priority": 5,
+      "required_skills": [
+        "Operador Certificado MT2"
+      ],
+      "subcategory": "Tablero Principal Energizado"
+    }
+  },
+  {
+    "id": "order_001",
+    "client": "Cafetería Martinez Belgrano",
+    "address": "Av. Cabildo 2200, Belgrano, CABA",
+    "zone": "Belgrano",
+    "raw_text": "Tenemos un problema eléctrico generalizado en el salón. Saltó la térmica principal y no podemos encender las cafeteras ni las luces.",
+    "status": "completada",
+    "created_at": "2026-08-11T18:00:00+00:00",
+    "updated_at": "2026-08-19T19:11:33.608419Z",
+    "structured_data": {
+      "category": "Electricidad",
+      "priority": 4,
+      "required_skills": [
+        "Técnico Electricista A"
+      ],
+      "subcategory": "Corte General de Energía"
+    }
+  }
+]

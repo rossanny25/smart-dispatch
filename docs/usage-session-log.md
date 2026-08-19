@@ -6,11 +6,11 @@ Use this log as evidence for the final PDF. The screenshots and API/log excerpts
 
 | Field | Value |
 | --- | --- |
-| Date | 2026-08-11 |
+| Date | 2026-08-19 |
 | Runtime | Docker Compose |
 | URL | `http://127.0.0.1:8050` |
 | Command | `docker compose up --build` |
-| Purpose | Demonstrate that Smart Dispatch IA exists, runs, and serves frontend/API evidence. |
+| Purpose | Demonstrate the current Smart Dispatch IA UI with canonical states, hard-rule evidence, calendar, operational map, admin technician profiles, and no-feasible scenario. |
 
 ## Steps
 
@@ -87,7 +87,45 @@ Use this log as evidence for the final PDF. The screenshots and API/log excerpts
    - `docs/evidence/04-learning-completed.png`
    - `docs/evidence/api-orders-after-session.json`
 
-7. Exported Docker logs for the real session.
+7. Reviewed the operational map and calendar after the completed dispatch.
+
+   Observed result:
+
+   - The map showed seeded work orders and technicians by zone.
+   - The calendar showed the completed service visit grouped by technician.
+
+   Evidence:
+
+   - `docs/evidence/05-map-operative.png`
+   - `docs/evidence/06-calendar-visits.png`
+
+8. Reviewed the admin technician profile screen.
+
+   Observed result:
+
+   - Admin screen exposed technician status, shift, workload, rating, GPS, contact, documents, and audit notes.
+
+   Evidence:
+
+   - `docs/evidence/07-admin-technicians.png`
+
+9. Ran the explicit no-feasible-candidates scenario.
+
+   Action:
+
+   - Selected Work Order `order_003`: Data Center Puerto Madero.
+   - Clicked `Despachar`.
+
+   Observed result:
+
+   - The canonical state reached `NO_FEASIBLE_CANDIDATES`.
+   - The UI showed rejection evidence without forcing a recommendation.
+
+   Evidence:
+
+   - `docs/evidence/08-no-feasible-candidates.png`
+
+10. Exported Docker logs for the real session.
 
    Evidence:
 
@@ -113,10 +151,14 @@ Use this log as evidence for the final PDF. The screenshots and API/log excerpts
 - [x] Screenshot: recommendation/candidates/evidence.
 - [x] Screenshot: approved recommendation / service completion modal.
 - [x] Screenshot: order completed after learning step.
+- [x] Screenshot: operational map.
+- [x] Screenshot: calendar with visit history.
+- [x] Screenshot: admin technician profile fields.
+- [x] Screenshot: `NO_FEASIBLE_CANDIDATES` scenario.
 - [x] API output excerpt: `/api/technicians`.
 - [x] API output excerpt: `/api/orders` after completion.
 - [x] Docker logs excerpt showing Uvicorn on `0.0.0.0:8050`.
 
 ## Notes For The Report
 
-The session proves the application is executable and not only a PDF/specification. For final grading, replace local-only evidence with a GitHub repository link and, if possible, a live deployed URL.
+The session proves the application is executable and not only a PDF/specification. It also records the current post-polish UI state, including the new operational evidence views and explicit no-feasible path.

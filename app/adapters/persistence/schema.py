@@ -103,6 +103,10 @@ service_technicians = Table(
     Column("rating", Float, nullable=False),
     Column("ppe_json", Text, nullable=False),
     Column("gps_json", Text, nullable=False),
+    Column("contact_phone", Text, nullable=False),
+    Column("contact_email", Text, nullable=False),
+    Column("documents_json", Text, nullable=False),
+    Column("audit_log_json", Text, nullable=False),
     Column("created_at", Text, nullable=False),
     Column("updated_at", Text, nullable=False),
     UniqueConstraint("name", name="uq_service_technicians_name"),
@@ -137,7 +141,33 @@ service_technicians = Table(
         "AND json_type(gps_json, '$.lng') IN ('integer','real')",
         name="ck_service_technicians_gps_shape",
     ),
+    CheckConstraint("json_valid(documents_json)", name="ck_service_technicians_documents"),
+    CheckConstraint("json_valid(audit_log_json)", name="ck_service_technicians_audit"),
 )
+
+service_orders = Table(
+    "service_orders",
+    metadata,
+    Column("id", Text, primary_key=True, nullable=False),
+    Column("client", Text, nullable=False),
+    Column("address", Text, nullable=False),
+    Column("zone", Text, nullable=False),
+    Column("raw_text", Text, nullable=False),
+    Column("status", Text, nullable=False),
+    Column("structured_data_json", Text, nullable=False),
+    Column("created_at", Text, nullable=False),
+    Column("updated_at", Text, nullable=False),
+    CheckConstraint(
+        "status IN ('pendiente','completada','cancelada')",
+        name="ck_service_orders_status",
+    ),
+    CheckConstraint("length(id) BETWEEN 1 AND 120", name="ck_service_orders_id"),
+    CheckConstraint("length(client) BETWEEN 1 AND 160", name="ck_service_orders_client"),
+    CheckConstraint("length(zone) BETWEEN 2 AND 80", name="ck_service_orders_zone"),
+    CheckConstraint("json_valid(structured_data_json)", name="ck_service_orders_structured"),
+)
+
+Index("ix_service_orders_status_zone", service_orders.c.status, service_orders.c.zone)
 
 service_visits = Table(
     "service_visits",
@@ -163,7 +193,7 @@ service_visits = Table(
     Column("created_at", Text, nullable=False),
     Column("updated_at", Text, nullable=False),
     CheckConstraint(
-        "status IN ('programada','completada','cancelada')",
+        "status IN ('programada','en_curso','completada','cancelada')",
         name="ck_service_visits_status",
     ),
     CheckConstraint("duration_minutes BETWEEN 1 AND 1440", name="ck_service_visits_duration"),

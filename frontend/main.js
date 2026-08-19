@@ -58,6 +58,10 @@ const adminTechRating = document.getElementById('admin-tech-rating');
 const adminTechPpe = document.getElementById('admin-tech-ppe');
 const adminTechGpsLat = document.getElementById('admin-tech-gps-lat');
 const adminTechGpsLng = document.getElementById('admin-tech-gps-lng');
+const adminTechPhone = document.getElementById('admin-tech-phone');
+const adminTechEmail = document.getElementById('admin-tech-email');
+const adminTechDocuments = document.getElementById('admin-tech-documents');
+const adminTechAudit = document.getElementById('admin-tech-audit');
 const adminClearTech = document.getElementById('admin-clear-tech');
 const adminTechMessage = document.getElementById('admin-tech-message');
 const guidedDemoState = document.getElementById('guided-demo-state');
@@ -67,13 +71,27 @@ const guidedDemoSteps = document.querySelectorAll('.guided-step');
 const ordersList = document.getElementById('orders-list');
 const techniciansGrid = document.getElementById('technicians-grid');
 const memoryList = document.getElementById('memory-list');
+const mapSummary = document.getElementById('map-summary');
+const mapMarkers = document.getElementById('map-markers');
+const mapZoneList = document.getElementById('map-zone-list');
 const calendarTechFilter = document.getElementById('calendar-tech-filter');
 const calendarSummary = document.getElementById('calendar-summary');
+const calendarTechnicianBoard = document.getElementById('calendar-technician-board');
 const calendarList = document.getElementById('calendar-list');
 const calendarCount = document.getElementById('calendar-count');
+const visitForm = document.getElementById('visit-form');
+const visitTechSelect = document.getElementById('visit-tech-select');
+const visitClient = document.getElementById('visit-client');
+const visitAddress = document.getElementById('visit-address');
+const visitZone = document.getElementById('visit-zone');
+const visitStart = document.getElementById('visit-start');
+const visitDuration = document.getElementById('visit-duration');
 
 const agentCycleCard = document.getElementById('agent-cycle-card');
 const cycleStatusText = document.getElementById('cycle-status-text');
+const canonicalCurrentState = document.getElementById('canonical-current-state');
+const analyzeAdapterBadge = document.getElementById('analyze-adapter-badge');
+const canonicalStateChips = document.querySelectorAll('.canonical-state-chip');
 const timelineSteps = document.querySelectorAll('.timeline-step');
 const detailsAgentTitle = document.getElementById('details-agent-title');
 const detailsJsonOutput = document.getElementById('details-json-output');
@@ -115,6 +133,24 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+const MAP_ZONES = {
+  Palermo: { x: 21, y: 28 },
+  Belgrano: { x: 58, y: 25 },
+  Centro: { x: 72, y: 56 },
+  Almagro: { x: 36, y: 62 },
+  Caballito: { x: 48, y: 82 }
+};
+
+function mapZonePosition(zone, index = 0, type = 'technician') {
+  const base = MAP_ZONES[zone] || { x: 50, y: 50 };
+  const direction = type === 'order' ? 1 : -1;
+  const offset = (index % 4) * 4;
+  return {
+    x: Math.min(92, Math.max(8, base.x + direction * offset)),
+    y: Math.min(90, Math.max(10, base.y + direction * Math.floor(index / 4) * 5))
+  };
 }
 
 function formatErrorMessage(value) {
@@ -317,6 +353,10 @@ function resetAdminTechForm() {
   adminTechRating.value = '4.5';
   adminTechGpsLat.value = '-34.6037';
   adminTechGpsLng.value = '-58.3816';
+  adminTechPhone.value = '';
+  adminTechEmail.value = '';
+  adminTechDocuments.value = '';
+  adminTechAudit.value = '';
   adminTechState.textContent = 'Crear';
   adminTechState.className = 'badge badge-status-pendiente';
   clearAdminTechMessage();
@@ -338,6 +378,10 @@ function fillAdminTechForm(tech) {
   adminTechPpe.value = formatList(tech.ppe);
   adminTechGpsLat.value = gps.lat || '';
   adminTechGpsLng.value = gps.lng || '';
+  adminTechPhone.value = tech.contact?.phone || '';
+  adminTechEmail.value = tech.contact?.email || '';
+  adminTechDocuments.value = formatList((tech.documents || []).map(item => item.name || item));
+  adminTechAudit.value = '';
   adminTechState.textContent = 'Editando';
   adminTechState.className = 'badge badge-status-completada';
   clearAdminTechMessage();
@@ -390,7 +434,17 @@ function buildTechnicianPayload() {
     gps_coordinates: {
       lat: Number(adminTechGpsLat.value),
       lng: Number(adminTechGpsLng.value)
-    }
+    },
+    contact: {
+      phone: adminTechPhone.value.trim(),
+      email: adminTechEmail.value.trim()
+    },
+    documents: parseList(adminTechDocuments.value).map(name => ({
+      name,
+      status: 'vigente',
+      expires_at: ''
+    })),
+    audit_notes: adminTechAudit.value.trim()
   };
 }
 
@@ -399,6 +453,7 @@ async function fetchJson(url, options = {}) {
   const isReplayableMutation = (
     url.includes('/api/v1/')
     || url.includes('/api/technicians')
+    || url.includes('/api/visits')
   ) && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
   const response = await fetch(url, {
     ...options,
@@ -620,6 +675,7 @@ async function loadData() {
 
     renderTechnicians();
     renderOrders();
+    renderOperationalMap();
     renderMemory();
     renderCalendar();
     populateOverrideSelect();
@@ -639,14 +695,22 @@ function renderTechnicians() {
     const ppe = parseList(tech.ppe);
     const shift = getTechShift(tech);
     const gps = getTechGps(tech);
+    const documents = Array.isArray(tech.documents) ? tech.documents : [];
+    const latestAudit = Array.isArray(tech.audit_log) && tech.audit_log.length
+      ? tech.audit_log[tech.audit_log.length - 1]
+      : null;
     const certTags = (certifications.length ? certifications : ['Sin certificaciones'])
       .map(cert => `<span class="cert-tag">${escapeHtml(cert)}</span>`)
       .join('');
     const ppeTags = (ppe.length ? ppe : ['EPP no informado'])
       .map(item => `<span class="cert-tag ppe-tag">${escapeHtml(item)}</span>`)
       .join('');
+    const docTags = (documents.length ? documents : [{ name: 'Sin documentos', status: 'pendiente' }])
+      .map(item => `<span class="cert-tag">${escapeHtml(item.name || item)}${item.status ? ` · ${escapeHtml(item.status)}` : ''}</span>`)
+      .join('');
     const shiftText = shift.start && shift.end ? `${shift.start} - ${shift.end}` : 'Turno no informado';
     const gpsText = gps.lat !== '' && gps.lng !== '' ? `${Number(gps.lat).toFixed(4)}, ${Number(gps.lng).toFixed(4)}` : 'GPS no informado';
+    const contactText = [tech.contact?.phone, tech.contact?.email].filter(Boolean).join(' · ') || 'Contacto no informado';
     const editButton = isAdminSession()
       ? `<button type="button" class="btn btn-secondary btn-tech-edit" data-tech-id="${escapeHtml(tech.id)}"><i class="fa-solid fa-pen-to-square"></i> Editar</button>`
       : '';
@@ -664,6 +728,7 @@ function renderTechnicians() {
         <div><strong>Turno:</strong> ${escapeHtml(shiftText)}</div>
         <div><strong>Carga hoy:</strong> ${escapeHtml(tech.active_workload_hours ?? 'N/D')} hs</div>
         <div><strong>Calificación:</strong> <i class="fa-solid fa-star" style="color: gold;"></i> ${escapeHtml(tech.rating ?? 'N/D')}</div>
+        <div><strong>Contacto:</strong> ${escapeHtml(contactText)}</div>
         <div><strong>GPS:</strong> ${escapeHtml(gpsText)}</div>
         <div>
           <strong>Certificaciones:</strong>
@@ -673,6 +738,11 @@ function renderTechnicians() {
           <strong>EPP:</strong>
           <div class="tech-certs">${ppeTags}</div>
         </div>
+        <div>
+          <strong>Documentos:</strong>
+          <div class="tech-certs">${docTags}</div>
+        </div>
+        <div><strong>Auditoría:</strong> ${escapeHtml(latestAudit?.message || 'Sin novedades')}</div>
         ${editButton ? `<div class="tech-actions">${editButton}</div>` : ''}
       </div>
     `;
@@ -729,14 +799,87 @@ function renderOrders() {
   });
 }
 
+function renderOperationalMap() {
+  if (!mapMarkers || !mapSummary || !mapZoneList) return;
+
+  const pendingOrders = orders.filter(order => (order.status || 'pendiente') === 'pendiente');
+  const zones = Object.keys(MAP_ZONES);
+  const zoneCounts = zones.map(zone => {
+    const zoneTechs = technicians.filter(tech => tech.zone === zone);
+    const zoneOrders = pendingOrders.filter(order => order.zone === zone);
+    return { zone, technicians: zoneTechs, orders: zoneOrders };
+  });
+
+  mapSummary.textContent = `${technicians.length} técnicos y ${pendingOrders.length} órdenes pendientes distribuidas por zona.`;
+  mapMarkers.innerHTML = '';
+  mapZoneList.innerHTML = '';
+
+  zoneCounts.forEach(group => {
+    group.technicians.forEach((tech, index) => {
+      const position = mapZonePosition(group.zone, index, 'technician');
+      const marker = document.createElement('button');
+      marker.type = 'button';
+      marker.className = `map-marker technician ${escapeHtml(tech.status || 'disponible')}`;
+      marker.style.left = `${position.x}%`;
+      marker.style.top = `${position.y}%`;
+      marker.title = `${tech.name} · ${statusLabel(tech.status)} · ${group.zone}`;
+      marker.innerHTML = `
+        <i class="fa-solid fa-user-gear"></i>
+        <span>${escapeHtml(tech.name.split(' ')[0] || tech.name)}</span>
+      `;
+      marker.addEventListener('click', () => {
+        switchAppView('technicians');
+        const card = [...document.querySelectorAll('.tech-card')]
+          .find(item => item.textContent.includes(tech.name));
+        card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      mapMarkers.appendChild(marker);
+    });
+
+    group.orders.forEach((order, index) => {
+      const position = mapZonePosition(group.zone, index, 'order');
+      const marker = document.createElement('button');
+      marker.type = 'button';
+      marker.className = `map-marker order priority-${escapeHtml(order.structured_data?.priority || 2)}${selectedOrder?.id === order.id ? ' active' : ''}`;
+      marker.style.left = `${position.x}%`;
+      marker.style.top = `${position.y}%`;
+      marker.title = `${order.client} · prioridad ${order.structured_data?.priority || 2}`;
+      marker.innerHTML = `
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>${escapeHtml(order.id)}</span>
+      `;
+      marker.addEventListener('click', () => startAgentSimulation(order.id));
+      mapMarkers.appendChild(marker);
+    });
+
+    const row = document.createElement('div');
+    row.className = 'map-zone-row';
+    row.innerHTML = `
+      <strong>${escapeHtml(group.zone)}</strong>
+      <span>${group.technicians.length} técnicos</span>
+      <span>${group.orders.length} órdenes pendientes</span>
+    `;
+    mapZoneList.appendChild(row);
+  });
+}
+
 function populateCalendarFilter() {
   const selectedValue = calendarTechFilter.value;
   calendarTechFilter.innerHTML = '<option value="">Todos los técnicos</option>';
+  if (visitTechSelect) {
+    visitTechSelect.innerHTML = '<option value="">Seleccionar técnico</option>';
+  }
   technicians.forEach(tech => {
     const option = document.createElement('option');
     option.value = tech.id;
     option.textContent = tech.name;
     calendarTechFilter.appendChild(option);
+    if (visitTechSelect) {
+      const visitOption = document.createElement('option');
+      visitOption.value = tech.id;
+      visitOption.textContent = tech.name;
+      visitTechSelect.appendChild(visitOption);
+    }
   });
   if (selectedValue && technicians.some(tech => tech.id === selectedValue)) {
     calendarTechFilter.value = selectedValue;
@@ -764,6 +907,64 @@ function formatVisitTime(value) {
   });
 }
 
+function formatVisitHours(minutes) {
+  const totalMinutes = Number(minutes) || 0;
+  if (totalMinutes < 60) return `${totalMinutes} min`;
+  const hours = totalMinutes / 60;
+  return `${hours.toFixed(hours % 1 === 0 ? 0 : 1)} hs`;
+}
+
+function renderCalendarTechnicianBoard() {
+  if (!calendarTechnicianBoard) return;
+  const selectedTechnician = calendarTechFilter.value;
+  calendarTechnicianBoard.innerHTML = '';
+
+  if (!technicians.length) {
+    calendarTechnicianBoard.innerHTML = `
+      <div class="calendar-empty">
+        No hay técnicos cargados para organizar la agenda.
+      </div>
+    `;
+    return;
+  }
+
+  technicians.forEach(tech => {
+    const techId = String(tech.id);
+    const techVisits = serviceVisits.filter(visit => String(visit.technician_id) === techId);
+    const completed = techVisits.filter(visit => visit.status === 'completada').length;
+    const minutes = techVisits.reduce((total, visit) => total + (Number(visit.duration_minutes) || 0), 0);
+    const sortedVisits = [...techVisits].sort((left, right) => {
+      const leftTime = new Date(left.scheduled_start_at || 0).getTime() || 0;
+      const rightTime = new Date(right.scheduled_start_at || 0).getTime() || 0;
+      return rightTime - leftTime;
+    });
+    const latestVisit = sortedVisits[0];
+    const isSelected = selectedTechnician === techId;
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = `calendar-tech-summary${isSelected ? ' active' : ''}`;
+    card.dataset.techId = techId;
+    card.setAttribute('aria-pressed', String(isSelected));
+    card.innerHTML = `
+      <span class="calendar-tech-summary-title">
+        <i class="fa-solid fa-user-gear"></i>
+        ${escapeHtml(tech.name)}
+      </span>
+      <span class="calendar-tech-summary-meta">
+        ${completed} completada${completed === 1 ? '' : 's'} · ${escapeHtml(formatVisitHours(minutes))}
+      </span>
+      <span class="calendar-tech-summary-last">
+        ${latestVisit ? `Última: ${escapeHtml(formatVisitDate(latestVisit.scheduled_start_at))}` : 'Sin visitas cerradas'}
+      </span>
+    `;
+    card.addEventListener('click', () => {
+      calendarTechFilter.value = isSelected ? '' : techId;
+      renderCalendar();
+    });
+    calendarTechnicianBoard.appendChild(card);
+  });
+}
+
 function renderCalendar() {
   populateCalendarFilter();
   const selectedTechnician = calendarTechFilter.value;
@@ -779,6 +980,7 @@ function renderCalendar() {
   calendarSummary.textContent = visibleVisits.length
     ? `${completed} completadas. La agenda se alimenta al cerrar despachos reales.`
     : 'Sin visitas registradas para el filtro actual.';
+  renderCalendarTechnicianBoard();
   calendarList.innerHTML = '';
 
   if (visibleVisits.length === 0) {
@@ -831,15 +1033,58 @@ function renderCalendar() {
           </div>
           <div class="visit-address">${escapeHtml(visit.address)}</div>
           ${visit.feedback_comment ? `<div class="visit-feedback">${escapeHtml(visit.feedback_comment)}</div>` : ''}
+          <div class="visit-actions">
+            ${['programada', 'en_curso', 'completada', 'cancelada']
+              .filter(status => status !== visit.status)
+              .map(status => `<button type="button" class="btn btn-secondary btn-visit-status" data-visit-id="${escapeHtml(visit.id)}" data-status="${status}">${escapeHtml(status)}</button>`)
+              .join('')}
+          </div>
         </div>
         <span class="badge badge-status-${escapeHtml(visit.status)}">${escapeHtml(visit.status)}</span>
       `;
       groupEl.appendChild(card);
     });
   });
+
+  document.querySelectorAll('.btn-visit-status').forEach(button => {
+    button.addEventListener('click', async () => {
+      try {
+        await fetchJson(`${API_BASE}/api/visits/${encodeURIComponent(button.dataset.visitId)}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: button.dataset.status })
+        });
+        await loadData();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+  });
 }
 
 calendarTechFilter.addEventListener('change', renderCalendar);
+
+visitForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  try {
+    await fetchJson(`${API_BASE}/api/visits`, {
+      method: 'POST',
+      body: JSON.stringify({
+        technician_id: visitTechSelect.value,
+        client: visitClient.value.trim(),
+        address: visitAddress.value.trim(),
+        zone: visitZone.value,
+        scheduled_start_at: visitStart.value ? new Date(visitStart.value).toISOString() : undefined,
+        duration_minutes: Number(visitDuration.value),
+        status: 'programada'
+      })
+    });
+    visitForm.reset();
+    visitDuration.value = '90';
+    await loadData();
+  } catch (error) {
+    alert(error.message);
+  }
+});
 
 // Renderizar memoria semántica
 function renderMemory() {
@@ -1017,10 +1262,75 @@ orderForm.addEventListener('submit', async (e) => {
 
 // --- SIMULADOR DEL CICLO DE AGENTES (OODA) ---
 
+function setCanonicalState(activeState) {
+  const state = String(activeState || 'IDLE');
+  if (canonicalCurrentState) {
+    canonicalCurrentState.textContent = state;
+    canonicalCurrentState.className = state === 'NO_FEASIBLE_CANDIDATES'
+      ? 'canonical-state-warning'
+      : state === 'FAILED'
+        ? 'canonical-state-error'
+        : '';
+  }
+
+  canonicalStateChips.forEach(chip => {
+    const chipState = chip.dataset.canonicalState;
+    chip.classList.toggle('active', chipState === state);
+    chip.classList.toggle('completed', [
+      'CAPTURE',
+      'ANALYZE',
+      'PLAN',
+      'EVALUATE'
+    ].includes(chipState) && [
+      'ANALYZE',
+      'PLAN',
+      'EVALUATE',
+      'WAIT_FOR_DECISION',
+      'NO_FEASIBLE_CANDIDATES'
+    ].includes(state) && canonicalStateOrder(chipState) < canonicalStateOrder(state));
+    chip.classList.toggle('warning', chipState === 'NO_FEASIBLE_CANDIDATES' && chipState === state);
+  });
+}
+
+function formatAnalyzeAdapter(metadata) {
+  const kind = metadata?.kind || 'local';
+  if (kind === 'llm') {
+    const provider = metadata.provider === 'ollama' ? 'Ollama' : (metadata.provider || 'LLM');
+    const model = metadata.model ? ` · ${metadata.model}` : '';
+    return {
+      label: `ANALYZE: ${provider}${model}`,
+      className: 'analyze-adapter-badge llm'
+    };
+  }
+  return {
+    label: 'ANALYZE: Local determinístico',
+    className: 'analyze-adapter-badge local'
+  };
+}
+
+function setAnalyzeAdapterBadge(metadata) {
+  if (!analyzeAdapterBadge) return;
+  const formatted = formatAnalyzeAdapter(metadata);
+  analyzeAdapterBadge.innerHTML = `<i class="fa-solid fa-microchip"></i> ${escapeHtml(formatted.label)}`;
+  analyzeAdapterBadge.className = formatted.className;
+}
+
+function canonicalStateOrder(state) {
+  return {
+    CAPTURE: 1,
+    ANALYZE: 2,
+    PLAN: 3,
+    EVALUATE: 4,
+    WAIT_FOR_DECISION: 5,
+    NO_FEASIBLE_CANDIDATES: 5
+  }[state] || 0;
+}
+
 async function startAgentSimulation(orderId) {
   selectedOrder = orders.find(o => o.id === orderId);
   if (!selectedOrder) return;
   switchAppView('console');
+  renderOperationalMap();
 
   // Limpiar estados de UI
   recommendationCard.style.display = 'none';
@@ -1034,6 +1344,8 @@ async function startAgentSimulation(orderId) {
   agentCycleCard.style.display = 'block';
   cycleStatusText.textContent = 'Inicializando...';
   cycleStatusText.className = 'active-badge animate-pulse';
+  setCanonicalState('CAPTURE');
+  setAnalyzeAdapterBadge(null);
   
   detailsAgentTitle.textContent = "Selecciona un agente para ver sus trazas de pensamiento";
   detailsJsonOutput.textContent = "Haga clic en cualquiera de los agentes arriba para inspeccionar su salida JSON estructurada y traza cognitiva de ejecución.";
@@ -1060,6 +1372,7 @@ async function startAgentSimulation(orderId) {
   stepCapture.querySelector('.step-status').innerHTML = '<i class="fa-solid fa-circle-check"></i>';
 
   // 2. ANALYZE AGENT EXECUTION
+  setCanonicalState('ANALYZE');
   const stepAnalyze = document.getElementById('step-analyze');
   stepAnalyze.classList.add('running');
   stepAnalyze.querySelector('.step-summary').textContent = 'Asignando habilidades y prioridad...';
@@ -1072,6 +1385,7 @@ async function startAgentSimulation(orderId) {
   stepAnalyze.querySelector('.step-status').innerHTML = '<i class="fa-solid fa-circle-check"></i>';
 
   // 3. PLANNING AGENT & BACKEND API CALL
+  setCanonicalState('PLAN');
   const stepPlan = document.getElementById('step-plan');
   stepPlan.classList.add('running');
   stepPlan.querySelector('.step-summary').textContent = 'Calculando asignaciones óptimas...';
@@ -1100,6 +1414,7 @@ async function startAgentSimulation(orderId) {
     }
     responseData = await res.json();
     currentSimulationData = responseData;
+    setAnalyzeAdapterBadge(responseData.analyze_adapter_metadata);
   } catch (error) {
     simulationError = error;
     console.error('Error al simular agentes:', error);
@@ -1113,6 +1428,7 @@ async function startAgentSimulation(orderId) {
     stepPlan.querySelector('.step-status').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
     cycleStatusText.textContent = 'Error';
     cycleStatusText.className = 'badge badge-status-error';
+    setCanonicalState('FAILED');
     detailsAgentTitle.textContent = 'Simulación no completada';
     detailsJsonOutput.textContent = simulationError?.message || 'No se recibió respuesta del servicio de despacho.';
     alert("No se pudo completar la simulación de despacho. Revisa el estado del servicio e intenta nuevamente.");
@@ -1124,7 +1440,10 @@ async function startAgentSimulation(orderId) {
   stepPlan.querySelector('.step-summary').textContent = 'Candidatos ponderados';
   stepPlan.querySelector('.step-status').innerHTML = '<i class="fa-solid fa-circle-check"></i>';
 
+  stepAnalyze.querySelector('.step-summary').textContent = `${formatAnalyzeAdapter(responseData.analyze_adapter_metadata).label}; urgencia y certificaciones identificadas`;
+
   // 4. EVALUATION AGENT EXECUTION
+  setCanonicalState('EVALUATE');
   const stepEvaluate = document.getElementById('step-evaluate');
   stepEvaluate.classList.add('running');
   stepEvaluate.querySelector('.step-summary').textContent = 'Verificando reglas de negocio...';
@@ -1150,7 +1469,10 @@ async function startAgentSimulation(orderId) {
   }
 
   // Finalizar carga del ciclo
-  cycleStatusText.textContent = 'Ciclo Completado';
+  const finalState = responseData.dispatch_state
+    || (responseData.recommended_assignment ? 'WAIT_FOR_DECISION' : 'NO_FEASIBLE_CANDIDATES');
+  setCanonicalState(finalState);
+  cycleStatusText.textContent = finalState;
   cycleStatusText.className = 'badge badge-status-completada';
 
   // Cargar primera vista de traza de Capture Agent por defecto

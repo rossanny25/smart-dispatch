@@ -9,7 +9,7 @@ flowchart LR
   API --> Commands["Application Commands"]
   Commands --> Orchestrator["DispatchOrchestrator<br/>state owner"]
   Orchestrator --> Stages["Stage Ports<br/>CAPTURE ANALYZE PLAN EVALUATE"]
-  Stages --> Analyze["Deterministic Analyze Adapter"]
+  Stages --> Analyze["Analyze Adapter<br/>deterministic or optional local Ollama"]
   Orchestrator --> Policies["Domain Policies<br/>Eligibility Scoring Confidence"]
   Commands --> UOW["Unit Of Work"]
   UOW --> Repos["SQLite Repositories"]

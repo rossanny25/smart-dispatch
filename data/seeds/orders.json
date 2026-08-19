@@ -28,5 +28,20 @@
       "priority": 5,
       "required_skills": ["Gasista Matriculado"]
     }
+  },
+  {
+    "id": "order_003",
+    "client": "Data Center Puerto Madero",
+    "address": "Av. Alicia Moreau de Justo 1848, Puerto Madero, CABA",
+    "zone": "Centro",
+    "raw_text": "Incidente crítico en sala eléctrica de media tensión. Se requiere operador certificado MT2 para intervenir tablero principal energizado.",
+    "status": "pendiente",
+    "created_at": "2026-08-11T18:10:00+00:00",
+    "structured_data": {
+      "category": "Media Tensión",
+      "subcategory": "Tablero Principal Energizado",
+      "priority": 5,
+      "required_skills": ["Operador Certificado MT2"]
+    }
   }
 ]

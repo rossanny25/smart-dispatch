@@ -719,6 +719,258 @@ textarea {
   gap: 12px;
 }
 
+/* --- MAPA OPERATIVO LOCAL --- */
+.map-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.map-summary,
+.map-legend {
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ops-map {
+  position: relative;
+  min-height: 430px;
+  overflow: hidden;
+  border: 1px solid var(--border-glass);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(0, 210, 211, 0.08), transparent 38%),
+    linear-gradient(315deg, rgba(255, 193, 7, 0.08), transparent 34%),
+    rgba(255, 255, 255, 0.025);
+}
+
+.map-grid-line {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.map-grid-line-v {
+  top: 8%;
+  bottom: 8%;
+  left: 50%;
+  width: 1px;
+}
+
+.map-grid-line-h {
+  left: 8%;
+  right: 8%;
+  top: 50%;
+  height: 1px;
+}
+
+.map-zone-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--text-secondary);
+  font-family: var(--font-title);
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.map-markers {
+  position: absolute;
+  inset: 0;
+}
+
+.map-marker {
+  position: absolute;
+  min-width: 84px;
+  max-width: 126px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transform: translate(-50%, -50%);
+  padding: 6px 8px;
+  border: 1px solid var(--border-glass);
+  border-radius: 999px;
+  color: var(--text-primary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  cursor: pointer;
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.22);
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.map-marker:hover,
+.map-marker:focus-visible,
+.map-marker.active {
+  z-index: 5;
+  transform: translate(-50%, -50%) scale(1.06);
+  outline: none;
+}
+
+.map-marker span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-marker.technician {
+  background: rgba(9, 132, 227, 0.72);
+  border-color: rgba(116, 185, 255, 0.52);
+}
+
+.map-marker.technician.ocupado,
+.map-marker.technician.fuera_servicio {
+  background: rgba(99, 110, 114, 0.72);
+}
+
+.map-marker.order {
+  background: rgba(255, 193, 7, 0.82);
+  border-color: rgba(255, 193, 7, 0.62);
+  color: #1d1d1f;
+}
+
+.map-marker.order.priority-5,
+.map-marker.order.priority-4 {
+  background: rgba(255, 71, 87, 0.86);
+  border-color: rgba(255, 118, 117, 0.72);
+  color: white;
+}
+
+.map-marker.order.active {
+  border-color: white;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.16), 0 14px 24px rgba(0, 0, 0, 0.28);
+}
+
+.map-zone-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.map-zone-row {
+  display: flex;
+  min-height: 78px;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.map-zone-row strong {
+  color: var(--text-primary);
+  font-family: var(--font-title);
+}
+
+.calendar-technician-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.visit-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.028);
+}
+
+.visit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.visit-actions .btn {
+  min-height: 28px;
+  padding: 4px 8px;
+  font-size: 10px;
+}
+
+.calendar-tech-summary {
+  display: flex;
+  min-height: 116px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.032);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.calendar-tech-summary:hover,
+.calendar-tech-summary:focus-visible,
+.calendar-tech-summary.active {
+  transform: translateY(-1px);
+  border-color: rgba(0, 210, 211, 0.42);
+  background: rgba(0, 210, 211, 0.08);
+  outline: none;
+}
+
+.calendar-tech-summary-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-title);
+  font-size: 13px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.calendar-tech-summary-title i {
+  color: var(--accent-cyan);
+}
+
+.calendar-tech-summary-meta,
+.calendar-tech-summary-last {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .calendar-group {
   display: flex;
   flex-direction: column;
@@ -844,6 +1096,117 @@ textarea {
 }
 
 /* --- CONSOLA DEL CICLO AGÉNTICO --- */
+.canonical-flow-panel {
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid var(--border-glass);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.028);
+}
+
+.canonical-flow-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.canonical-flow-header strong {
+  color: var(--accent-cyan);
+  font-family: var(--font-title);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.canonical-flow-header strong.canonical-state-warning {
+  color: var(--color-warning);
+}
+
+.canonical-flow-header strong.canonical-state-error {
+  color: var(--color-danger);
+}
+
+.canonical-flow-status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.analyze-adapter-badge {
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.analyze-adapter-badge.llm {
+  border-color: rgba(0, 210, 211, 0.42);
+  background: rgba(0, 210, 211, 0.1);
+  color: var(--accent-cyan);
+}
+
+.analyze-adapter-badge.local {
+  border-color: rgba(255, 193, 7, 0.28);
+  background: rgba(255, 193, 7, 0.08);
+  color: var(--color-warning);
+}
+
+.canonical-state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 8px;
+}
+
+.canonical-state-chip {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 8px;
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.canonical-state-chip.completed {
+  color: var(--color-success);
+  border-color: rgba(46, 213, 115, 0.24);
+}
+
+.canonical-state-chip.active {
+  color: var(--accent-cyan);
+  border-color: rgba(0, 210, 211, 0.46);
+  background: rgba(0, 210, 211, 0.08);
+}
+
+.canonical-state-chip.warning {
+  color: var(--color-warning);
+  border-color: rgba(255, 193, 7, 0.42);
+  background: rgba(255, 193, 7, 0.08);
+}
+
 .agent-timeline {
   display: flex;
   flex-direction: column;
@@ -1270,6 +1633,7 @@ textarea {
 .badge-status-pendiente { background: rgba(255, 165, 2, 0.15); color: var(--color-warning); }
 .badge-status-completada { background: rgba(46, 213, 115, 0.15); color: var(--color-success); }
 .badge-status-error { background: rgba(255, 71, 87, 0.15); color: var(--color-danger); }
+.badge-status-en_curso { background: rgba(9, 132, 227, 0.15); color: var(--accent-blue); }
 
 /* --- GRILLA DE TÉCNICOS --- */
 .tech-grid {
@@ -1590,8 +1954,21 @@ textarea {
   }
 
   .calendar-toolbar,
-  .calendar-visit-card {
+  .calendar-visit-card,
+  .calendar-technician-board,
+  .visit-form,
+  .map-toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .ops-map {
+    min-height: 360px;
+  }
+
+  .map-marker {
+    min-width: 68px;
+    max-width: 96px;
+    font-size: 9px;
   }
 
   .admin-user-row {

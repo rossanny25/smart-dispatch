@@ -87,6 +87,40 @@ def test_all_current_legacy_routes_remain_reachable(
     assert "message" in json.loads(reset_body)
 
 
+def test_legacy_order_creation_accepts_common_electrical_short_circuit_text(
+    tmp_path: Path,
+) -> None:
+    app = _app_with_runtime(tmp_path)
+
+    status, _, body = request_asgi(
+        app,
+        "/api/orders",
+        method="POST",
+        json_body={
+            "raw_text": (
+                "Hola en mi casa hubo un cortocircuito y parte de la pared "
+                "esta quemada, me urge que puedan enviarme un tecnico lo mas "
+                "rapido posible"
+            ),
+            "address": "Calle Esmeralda 135",
+            "zone": "Centro",
+        },
+    )
+
+    payload = json.loads(body)
+    assert status == 201
+    assert payload["structured_data"]["category"] == "Electricidad"
+    assert payload["structured_data"]["priority"] == 5
+    assert payload["structured_data"]["required_skills"] == [
+        "Técnico Electricista A"
+    ]
+    assert payload["structured_data"]["analyze_adapter_metadata"] == {
+        "kind": "local",
+        "provider": None,
+        "model": None,
+    }
+
+
 def test_legacy_simulation_returns_hard_rule_evidence_for_all_technicians(
     tmp_path: Path,
     monkeypatch,
@@ -131,6 +165,16 @@ def test_legacy_simulation_returns_hard_rule_evidence_for_all_technicians(
     assert payload["recommended_assignment"]["confidence"]["value"] != (
         payload["recommended_assignment"]["score"] / 100
     )
+    assert payload["analyze_adapter_metadata"] == {
+        "kind": "local",
+        "provider": None,
+        "model": None,
+    }
+    assert payload["agent_logs"]["analyze"]["output"]["adapter_metadata"] == {
+        "kind": "local",
+        "provider": None,
+        "model": None,
+    }
     assert rejected
     assert all("hard_rule_checks" in candidate for candidate in candidates)
     assert all(len(candidate["hard_rule_checks"]) == 6 for candidate in candidates)
@@ -182,6 +226,40 @@ def test_legacy_simulation_does_not_force_recommendation_when_none_are_feasible(
         for candidate in payload["candidates"]
     )
     assert all(candidate["score"] is None for candidate in payload["candidates"])
+
+
+def test_seeded_no_feasible_order_returns_explicit_terminal_state(
+    tmp_path: Path,
+) -> None:
+    app = _app_with_runtime(tmp_path)
+
+    orders_status, _, orders_body = request_asgi(app, "/api/orders")
+    status, _, body = request_asgi(
+        app,
+        "/api/dispatch/simulate",
+        method="POST",
+        json_body={"order_id": "order_003"},
+    )
+
+    orders_payload = json.loads(orders_body)
+    payload = json.loads(body)
+    assert orders_status == status == 200
+    assert any(order["id"] == "order_003" for order in orders_payload)
+    assert payload["dispatch_state"] == "NO_FEASIBLE_CANDIDATES"
+    assert payload["recommended_assignment"] is None
+    assert len(payload["candidates"]) == 5
+    assert all(
+        candidate["validation_status"] == "rechazado"
+        for candidate in payload["candidates"]
+    )
+    assert all(candidate["score"] is None for candidate in payload["candidates"])
+    assert all(
+        any(
+            check["key"] == "certifications" and check["status"] == "fail"
+            for check in candidate["hard_rule_checks"]
+        )
+        for candidate in payload["candidates"]
+    )
 
 
 def test_technicians_are_bootstrapped_from_sqlite_runtime(tmp_path: Path) -> None:
@@ -312,6 +390,74 @@ def test_reset_clears_service_visits(tmp_path: Path, monkeypatch) -> None:
     assert json.loads(visits_body) == []
 
 
+def test_orders_are_sqlite_backed_and_reset_from_seeds(tmp_path: Path) -> None:
+    app = _app_with_runtime(tmp_path)
+    cookie = _admin_cookie(app)
+
+    create_status, _, create_body = request_asgi(
+        app,
+        "/api/orders",
+        method="POST",
+        json_body={
+            "raw_text": "fuga gas urgente",
+            "address": "Sucursal Palermo 123",
+            "zone": "Palermo",
+        },
+    )
+    created = json.loads(create_body)
+    before_reset_status, _, before_reset_body = request_asgi(app, "/api/orders")
+    reset_status, _, _ = request_asgi(
+        app,
+        "/api/reset",
+        method="POST",
+        headers={"cookie": cookie},
+        json_body={},
+        authenticated=False,
+    )
+    after_reset_status, _, after_reset_body = request_asgi(app, "/api/orders")
+
+    before_reset = json.loads(before_reset_body)
+    after_reset = json.loads(after_reset_body)
+    assert create_status == 201
+    assert created["id"] in {order["id"] for order in before_reset}
+    assert reset_status == before_reset_status == after_reset_status == 200
+    assert created["id"] not in {order["id"] for order in after_reset}
+    assert {order["id"] for order in after_reset} >= {"order_001", "order_002", "order_003"}
+
+
+def test_manual_service_visit_can_be_scheduled_and_progressed(tmp_path: Path) -> None:
+    app = _app_with_runtime(tmp_path)
+
+    create_status, _, create_body = request_asgi(
+        app,
+        "/api/visits",
+        method="POST",
+        json_body={
+            "technician_id": "tech_03",
+            "client": "Sucursal Manual",
+            "address": "Av. Manual 123",
+            "zone": "Belgrano",
+            "category": "Inspección",
+            "scheduled_start_at": "2026-08-19T14:00:00Z",
+            "duration_minutes": 60,
+            "status": "programada",
+        },
+    )
+    created = json.loads(create_body)["visit"]
+    patch_status, _, patch_body = request_asgi(
+        app,
+        f"/api/visits/{created['id']}",
+        method="PATCH",
+        json_body={"status": "en_curso"},
+    )
+
+    assert create_status == 201
+    assert created["status"] == "programada"
+    assert created["client"] == "Sucursal Manual"
+    assert patch_status == 200
+    assert json.loads(patch_body)["visit"]["status"] == "en_curso"
+
+
 def test_admin_can_create_and_edit_service_technicians(tmp_path: Path) -> None:
     app = _app_with_runtime(tmp_path)
     cookie = _admin_cookie(app)
@@ -331,6 +477,9 @@ def test_admin_can_create_and_edit_service_technicians(tmp_path: Path) -> None:
             "rating": 4.4,
             "ppe": ["detector de gas"],
             "gps_coordinates": {"lat": -34.58, "lng": -58.42},
+            "contact": {"phone": "+54 11 5555-0101", "email": "marina@example.test"},
+            "documents": [{"name": "Matrícula gas", "status": "vigente"}],
+            "audit_notes": "Alta inicial validada",
         },
         authenticated=False,
     )
@@ -345,16 +494,25 @@ def test_admin_can_create_and_edit_service_technicians(tmp_path: Path) -> None:
             "certifications": ["Gasista Matriculado", "Técnico HVAC"],
             "shift": {"start": "09:00", "end": "17:00"},
             "active_workload_hours": 2.5,
+            "contact": {"phone": "+54 11 5555-0102", "email": "marina.ruiz@example.test"},
+            "documents": [{"name": "Matrícula gas", "status": "por_vencer"}],
+            "audit_notes": "Documentación revisada",
         },
         authenticated=False,
     )
 
     assert create_status == 201
     assert created["name"] == "Marina Ruiz"
+    assert created["contact"]["phone"] == "+54 11 5555-0101"
+    assert created["documents"][0]["name"] == "Matrícula gas"
+    assert created["audit_log"][0]["message"] == "Alta inicial validada"
     assert update_status == 200
     updated = json.loads(update_body)["technician"]
     assert updated["shift"] == {"start": "09:00", "end": "17:00"}
     assert "Técnico HVAC" in updated["certifications"]
+    assert updated["contact"]["email"] == "marina.ruiz@example.test"
+    assert updated["documents"][0]["status"] == "por_vencer"
+    assert updated["audit_log"][-1]["message"] == "Documentación revisada"
 
 
 def test_non_admin_cannot_write_service_technicians(tmp_path: Path) -> None:

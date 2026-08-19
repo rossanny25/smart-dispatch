@@ -46,7 +46,7 @@ from app.api.v1.middleware import CanonicalCommandMiddleware
 from app.api.v1.router import create_v1_router
 from app.application.commands.create_work_order import CreateWorkOrder
 from app.application.commands.execute_dispatch_run import DispatchOrchestrator
-from app.adapters.stages.deterministic_analyze import DeterministicAnalyzeStage
+from app.adapters.stages.ollama_analyze import build_analyze_stage_from_environment
 from app.application.ports.persistence import UnitOfWorkFactory
 
 
@@ -68,6 +68,7 @@ class AdminCreateUserPayload(BaseModel):
     display_name: str
     role: str
     password: str
+    is_active: StrictBool = True
 
 
 class AdminUpdateUserPayload(BaseModel):
@@ -155,7 +156,7 @@ def create_app(
     )
     dispatch_orchestrator = DispatchOrchestrator(
         unit_of_work_factory=concrete_factory,
-        stage=DeterministicAnalyzeStage(),
+        stage=build_analyze_stage_from_environment(),
         uuid_factory=uuid_factory,
         clock=clock,
     )
@@ -271,6 +272,7 @@ def create_app(
                 display_name=payload.display_name,
                 role=payload.role,
                 password=payload.password,
+                is_active=payload.is_active,
                 database_path=auth_database_path,
             )
         except DuplicateUsernameError:

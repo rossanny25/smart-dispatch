@@ -22,7 +22,8 @@ the next dispatch simulation immediately.
 
 ## GET `/api/orders`
 
-Returns the in-memory work-order array.
+Returns SQLite-backed operational demo orders bootstrapped from
+`data/seeds/orders.json`.
 
 ## GET `/api/memory/learning`
 
@@ -59,30 +60,44 @@ Request:
 }
 ```
 
-Response includes `recommended_assignment`, ranked `candidates`, hard-rule
-checks, recommendation confidence, and `agent_logs`. The compatibility contract
-still lacks canonical run state, data freshness, and a stable error envelope.
+Response includes `dispatch_state`, `recommended_assignment`, ranked
+`candidates`, hard-rule checks, recommendation confidence, and `agent_logs`.
+`dispatch_state` is `WAIT_FOR_DECISION` when a recommendation exists and
+`NO_FEASIBLE_CANDIDATES` when every candidate is rejected. The compatibility
+contract still lacks full canonical run state, data freshness, and a stable
+error envelope.
 
 ## POST `/api/dispatch/confirm`
 
 Accepts an order, selected technician, override flag/feedback, and optional
-real duration. It updates order state in compatibility storage, increments the
-selected technician workload in SQLite, may write learning records, and returns
+real duration. It updates SQLite-backed order state, increments the selected
+technician workload in SQLite, may write learning records, and returns
 the created `visit`. If the same order was already confirmed, it returns the
 existing visit with `learnings_updated: []` and does not increment workload
 again.
 
 ## GET `/api/visits`
 
-Returns SQLite-backed completed service visits for the calendar view, including
-order, technician, zone, time window, duration, feedback, and status. Technician
-names are resolved from the current SQLite technician roster when available.
+Returns SQLite-backed service visits for the calendar view, including order,
+technician, zone, time window, duration, feedback, and status. Technician names
+are resolved from the current SQLite technician roster when available.
+
+## POST `/api/visits`
+
+Creates a manually scheduled visit with `technician_id`, client, address, zone,
+scheduled start, duration, and optional category/comment. The default status is
+`programada`.
+
+## PATCH `/api/visits/{visit_id}`
+
+Updates visit `status`. Supported values are `programada`, `en_curso`,
+`completada`, and `cancelada`.
 
 ## POST `/api/reset`
 
-Reloads runtime technicians and demo orders from seeds, and restores the
-learning runtime file from `data/learning_store.json`. It also clears
-SQLite-backed service visits.
+Reloads runtime technicians and SQLite-backed demo orders from seeds, and
+restores the learning runtime file from `data/learning_store.json`. It also
+clears SQLite-backed service visits.
 
 ## GET `/api/v1/admin/users`
 

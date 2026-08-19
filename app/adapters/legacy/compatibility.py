@@ -25,6 +25,7 @@ from app.adapters.persistence.database import (
     connect_sqlite,
     resolve_database_path,
 )
+from app.adapters.stages.ollama_analyze import build_analyze_stage_from_environment
 
 
 router = APIRouter(include_in_schema=False)
@@ -35,6 +36,7 @@ SEED_ORDERS_PATH = SEED_DATA_DIR / "orders.json"
 SEED_LEARNING_STORE_PATH = PROJECT_ROOT / "data" / "learning_store.json"
 DEFAULT_LEARNING_STORE_PATH = PROJECT_ROOT / "data" / "learning_store.runtime.json"
 ALLOWED_TECHNICIAN_STATUSES = {"disponible", "ocupado", "fuera_servicio"}
+ALLOWED_VISIT_STATUSES = {"programada", "en_curso", "completada", "cancelada"}
 KNOWN_SERVICE_TERMS = {
     "agua",
     "aire",
@@ -46,7 +48,11 @@ KNOWN_SERVICE_TERMS = {
     "cano",
     "caño",
     "climatiz",
+    "corto",
+    "cortocircuito",
     "corte",
+    "disyuntor",
+    "enchufe",
     "electric",
     "fibra",
     "frio",
@@ -60,11 +66,31 @@ KNOWN_SERVICE_TERMS = {
     "plomer",
     "red",
     "regulador",
+    "tablero",
     "tension",
     "tensión",
     "termica",
     "térmica",
+    "quemada",
+    "quemado",
     "urgente",
+}
+CATEGORY_LABELS = {
+    "gas": "Gas",
+    "electricity": "Electricidad",
+    "telecommunications": "Telecomunicaciones",
+    "plumbing": "Plomería",
+    "hvac": "Climatización",
+    "maintenance": "Mantenimiento",
+}
+CERTIFICATION_SKILL_LABELS = {
+    "gas_registered": "Gasista Matriculado",
+    "electrician_category_a": "Técnico Electricista A",
+    "wan_networks": "Redes WAN",
+    "fiber_optics": "Fibra Óptica",
+    "working_at_height": "Trabajo en Altura",
+    "licensed_plumber": "Plomero Matriculado",
+    "high_pressure_refrigerants": "Técnico HVAC",
 }
 TECHNICIAN_CREATE_FIELDS = {
     "id",
@@ -77,6 +103,9 @@ TECHNICIAN_CREATE_FIELDS = {
     "rating",
     "ppe",
     "gps_coordinates",
+    "contact",
+    "documents",
+    "audit_notes",
 }
 TECHNICIAN_UPDATE_FIELDS = TECHNICIAN_CREATE_FIELDS - {"id"}
 _database_path_override: Path | None = None
@@ -138,6 +167,13 @@ def _technician_table_exists(connection: sqlite3.Connection) -> bool:
 def _visits_table_exists(connection: sqlite3.Connection) -> bool:
     row = connection.execute(
         "SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = 'service_visits'"
+    ).fetchone()
+    return row is not None
+
+
+def _orders_table_exists(connection: sqlite3.Connection) -> bool:
+    row = connection.execute(
+        "SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = 'service_orders'"
     ).fetchone()
     return row is not None
 
@@ -279,6 +315,63 @@ def _gps_payload(value: Any) -> dict[str, float]:
     return {"lat": lat, "lng": lng}
 
 
+def _contact_payload(value: Any) -> dict[str, str]:
+    if value is None:
+        return {"phone": "", "email": ""}
+    if not isinstance(value, dict):
+        raise TechnicianValidationError("contact debe ser un objeto.")
+    phone = str(value.get("phone", "")).strip()
+    email = str(value.get("email", "")).strip()
+    if len(phone) > 40:
+        raise TechnicianValidationError("El teléfono no puede superar 40 caracteres.")
+    if email and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        raise TechnicianValidationError("Email de contacto inválido.")
+    if len(email) > 120:
+        raise TechnicianValidationError("El email no puede superar 120 caracteres.")
+    return {"phone": phone, "email": email}
+
+
+def _document_list(value: Any) -> list[dict[str, str]]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        values = _json_list(value)
+        return [{"name": item, "status": "vigente"} for item in values]
+    if not isinstance(value, list):
+        raise TechnicianValidationError("documents debe ser una lista.")
+    documents: list[dict[str, str]] = []
+    for item in value:
+        if isinstance(item, str):
+            name = item.strip()
+            status = "vigente"
+            expires_at = ""
+        elif isinstance(item, dict):
+            name = str(item.get("name", "")).strip()
+            status = str(item.get("status", "vigente")).strip()
+            expires_at = str(item.get("expires_at", "")).strip()
+        else:
+            raise TechnicianValidationError("Cada documento debe ser texto u objeto.")
+        if not name:
+            continue
+        if status not in {"vigente", "por_vencer", "vencido"}:
+            raise TechnicianValidationError("Estado de documento inválido.")
+        documents.append({"name": name[:120], "status": status, "expires_at": expires_at[:40]})
+    return documents
+
+
+def _audit_log(existing: dict[str, Any] | None, note: Any) -> list[dict[str, str]]:
+    entries = list(existing.get("audit_log", [])) if existing else []
+    text = str(note or "").strip()
+    if text:
+        entries.append(
+            {
+                "at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+                "message": text[:240],
+            }
+        )
+    return entries[-20:]
+
+
 def _validate_technician_payload(
     payload: dict[str, Any],
     *,
@@ -309,6 +402,7 @@ def _validate_technician_payload(
     shift = payload.get("shift", source.get("shift", {}))
     if not isinstance(shift, dict):
         raise TechnicianValidationError("El turno debe tener inicio y fin.")
+    contact = _contact_payload(payload.get("contact", source.get("contact")))
     return {
         "id": technician_id,
         "name": name,
@@ -344,6 +438,9 @@ def _validate_technician_payload(
         "gps_coordinates": _gps_payload(
             payload.get("gps_coordinates", source.get("gps_coordinates"))
         ),
+        "contact": contact,
+        "documents": _document_list(payload.get("documents", source.get("documents", []))),
+        "audit_log": _audit_log(source, payload.get("audit_notes")),
     }
 
 
@@ -351,10 +448,14 @@ def _row_to_technician(row: sqlite3.Row) -> dict[str, Any]:
     certifications = json.loads(str(row["certifications_json"]))
     ppe = json.loads(str(row["ppe_json"]))
     gps = json.loads(str(row["gps_json"]))
+    documents = json.loads(str(row["documents_json"]))
+    audit_log = json.loads(str(row["audit_log_json"]))
     if (
         not isinstance(certifications, list)
         or not isinstance(ppe, list)
         or not isinstance(gps, dict)
+        or not isinstance(documents, list)
+        or not isinstance(audit_log, list)
     ):
         raise RuntimeError("Persisted technician row is corrupt.")
     return {
@@ -371,6 +472,12 @@ def _row_to_technician(row: sqlite3.Row) -> dict[str, Any]:
         "rating": float(row["rating"]),
         "ppe": ppe,
         "gps_coordinates": gps,
+        "contact": {
+            "phone": str(row["contact_phone"]),
+            "email": str(row["contact_email"]),
+        },
+        "documents": documents,
+        "audit_log": audit_log,
         "created_at": str(row["created_at"]),
         "updated_at": str(row["updated_at"]),
     }
@@ -393,6 +500,10 @@ def _technician_values(technician: dict[str, Any], now: str) -> tuple[object, ..
             ensure_ascii=False,
             sort_keys=True,
         ),
+        technician.get("contact", {}).get("phone", ""),
+        technician.get("contact", {}).get("email", ""),
+        json.dumps(technician.get("documents", []), ensure_ascii=False, sort_keys=True),
+        json.dumps(technician.get("audit_log", []), ensure_ascii=False, sort_keys=True),
         now,
         now,
     )
@@ -417,9 +528,10 @@ def bootstrap_service_technicians(
                 INSERT INTO service_technicians (
                     id, name, status, zone, certifications_json, shift_start,
                     shift_end, active_workload_hours, rating, ppe_json, gps_json,
+                    contact_phone, contact_email, documents_json, audit_log_json,
                     created_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 _technician_values(technician, now),
             )
@@ -457,9 +569,10 @@ def create_service_technician(payload: dict[str, Any]) -> dict[str, Any]:
                 INSERT INTO service_technicians (
                     id, name, status, zone, certifications_json, shift_start,
                     shift_end, active_workload_hours, rating, ppe_json, gps_json,
+                    contact_phone, contact_email, documents_json, audit_log_json,
                     created_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 _technician_values(technician, now),
             )
@@ -492,7 +605,9 @@ def update_service_technician(
                 UPDATE service_technicians
                 SET name = ?, status = ?, zone = ?, certifications_json = ?,
                     shift_start = ?, shift_end = ?, active_workload_hours = ?,
-                    rating = ?, ppe_json = ?, gps_json = ?, updated_at = ?
+                    rating = ?, ppe_json = ?, gps_json = ?, contact_phone = ?,
+                    contact_email = ?, documents_json = ?, audit_log_json = ?,
+                    updated_at = ?
                 WHERE id = ?
                 """,
                 (
@@ -514,6 +629,10 @@ def update_service_technician(
                         ensure_ascii=False,
                         sort_keys=True,
                     ),
+                    technician["contact"]["phone"],
+                    technician["contact"]["email"],
+                    json.dumps(technician["documents"], ensure_ascii=False, sort_keys=True),
+                    json.dumps(technician["audit_log"], ensure_ascii=False, sort_keys=True),
                     now,
                     technician_id,
                 ),
@@ -533,6 +652,131 @@ def reset_service_technicians() -> None:
             return
         connection.execute("DELETE FROM service_technicians")
     bootstrap_service_technicians()
+
+
+def _row_to_order(row: sqlite3.Row) -> dict[str, Any]:
+    structured_data = json.loads(str(row["structured_data_json"]))
+    if not isinstance(structured_data, dict):
+        raise RuntimeError("Persisted service order row is corrupt.")
+    return {
+        "id": str(row["id"]),
+        "client": str(row["client"]),
+        "address": str(row["address"]),
+        "zone": str(row["zone"]),
+        "raw_text": str(row["raw_text"]),
+        "status": str(row["status"]),
+        "created_at": str(row["created_at"]),
+        "updated_at": str(row["updated_at"]),
+        "structured_data": structured_data,
+    }
+
+
+def _order_values(order: dict[str, Any], now: str) -> tuple[object, ...]:
+    return (
+        str(order["id"]),
+        str(order.get("client") or "Cliente"),
+        str(order.get("address") or ""),
+        str(order.get("zone") or ""),
+        str(order.get("raw_text") or ""),
+        str(order.get("status") or "pendiente"),
+        json.dumps(order.get("structured_data", {}), ensure_ascii=False, sort_keys=True),
+        str(order.get("created_at") or now),
+        now,
+    )
+
+
+def bootstrap_service_orders(database_path: str | Path | None = None) -> None:
+    if database_path is not None:
+        configure_database_path(database_path)
+    with _connect() as connection:
+        if not _orders_table_exists(connection):
+            orders[:] = load_seed_list(SEED_ORDERS_PATH)
+            return
+        count = connection.execute("SELECT count(*) FROM service_orders").fetchone()[0]
+        if count:
+            return
+        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        for item in load_seed_list(SEED_ORDERS_PATH):
+            connection.execute(
+                """
+                INSERT INTO service_orders (
+                    id, client, address, zone, raw_text, status,
+                    structured_data_json, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                _order_values(item, now),
+            )
+
+
+def list_service_orders() -> list[dict[str, Any]]:
+    with _connect() as connection:
+        if not _orders_table_exists(connection):
+            return [item.copy() for item in orders]
+        rows = connection.execute(
+            """
+            SELECT * FROM service_orders
+            ORDER BY status DESC, created_at ASC
+            """
+        ).fetchall()
+    return [_row_to_order(row) for row in rows]
+
+
+def get_service_order(order_id: str) -> dict[str, Any] | None:
+    with _connect() as connection:
+        if not _orders_table_exists(connection):
+            return next((item for item in orders if item["id"] == order_id), None)
+        row = connection.execute(
+            "SELECT * FROM service_orders WHERE id = ?",
+            (order_id,),
+        ).fetchone()
+    return _row_to_order(row) if row is not None else None
+
+
+def create_service_order(order: dict[str, Any]) -> dict[str, Any]:
+    now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+    order["updated_at"] = now
+    with _connect() as connection:
+        if not _orders_table_exists(connection):
+            orders.insert(0, order)
+            return order
+        connection.execute(
+            """
+            INSERT INTO service_orders (
+                id, client, address, zone, raw_text, status,
+                structured_data_json, created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            _order_values(order, now),
+        )
+    created = get_service_order(str(order["id"]))
+    return created or order
+
+
+def update_service_order_status(order_id: str, status: str) -> None:
+    if status not in {"pendiente", "completada", "cancelada"}:
+        raise ValueError("invalid order status")
+    now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+    with _connect() as connection:
+        if not _orders_table_exists(connection):
+            for item in orders:
+                if item["id"] == order_id:
+                    item["status"] = status
+            return
+        connection.execute(
+            "UPDATE service_orders SET status = ?, updated_at = ? WHERE id = ?",
+            (status, now, order_id),
+        )
+
+
+def reset_service_orders() -> None:
+    with _connect() as connection:
+        if not _orders_table_exists(connection):
+            orders[:] = load_seed_list(SEED_ORDERS_PATH)
+            return
+        connection.execute("DELETE FROM service_orders")
+    bootstrap_service_orders()
 
 
 def _row_to_visit(row: sqlite3.Row) -> dict[str, Any]:
@@ -629,11 +873,23 @@ def create_service_visit(
     technician: dict[str, Any],
     duration_minutes: int,
     feedback_comment: str,
+    status: str = "completada",
+    scheduled_start_at: str | None = None,
 ) -> dict[str, Any]:
+    if status not in ALLOWED_VISIT_STATUSES:
+        raise ValueError("invalid visit status")
     minutes = max(1, min(1440, int(duration_minutes or 90)))
-    started_at = datetime.now(UTC)
+    if scheduled_start_at:
+        try:
+            started_at = datetime.fromisoformat(scheduled_start_at.replace("Z", "+00:00"))
+            if started_at.tzinfo is None:
+                started_at = started_at.replace(tzinfo=UTC)
+        except ValueError:
+            started_at = datetime.now(UTC)
+    else:
+        started_at = datetime.now(UTC)
     ended_at = started_at + timedelta(minutes=minutes)
-    now = started_at.isoformat().replace("+00:00", "Z")
+    now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     visit = {
         "id": f"visit_{uuid4().hex[:10]}",
         "order_id": str(order["id"]),
@@ -643,7 +899,7 @@ def create_service_visit(
         "address": str(order.get("address") or ""),
         "zone": str(order.get("zone") or technician.get("zone") or ""),
         "category": str(order.get("structured_data", {}).get("category") or "Servicio"),
-        "status": "completada",
+        "status": status,
         "scheduled_start_at": started_at.isoformat().replace("+00:00", "Z"),
         "scheduled_end_at": ended_at.isoformat().replace("+00:00", "Z"),
         "duration_minutes": minutes,
@@ -691,6 +947,58 @@ def create_service_visit(
                 return _row_to_visit(existing)
             raise
     return visit
+
+
+def create_manual_service_visit(payload: dict[str, Any]) -> dict[str, Any]:
+    technician = get_service_technician(str(payload.get("technician_id", "")))
+    if technician is None:
+        raise KeyError("technician")
+    order_id = str(payload.get("order_id") or f"manual_{uuid4().hex[:8]}")
+    order = get_service_order(order_id) or {
+        "id": order_id,
+        "client": str(payload.get("client") or "Visita manual"),
+        "address": str(payload.get("address") or ""),
+        "zone": str(payload.get("zone") or technician.get("zone") or ""),
+        "structured_data": {"category": str(payload.get("category") or "Servicio manual")},
+    }
+    return create_service_visit(
+        order=order,
+        technician=technician,
+        duration_minutes=int(payload.get("duration_minutes") or 90),
+        feedback_comment=str(payload.get("feedback_comment") or ""),
+        status=str(payload.get("status") or "programada"),
+        scheduled_start_at=payload.get("scheduled_start_at"),
+    )
+
+
+def update_service_visit_status(visit_id: str, status: str) -> dict[str, Any]:
+    if status not in ALLOWED_VISIT_STATUSES:
+        raise ValueError("invalid visit status")
+    now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+    with _connect() as connection:
+        if not _visits_table_exists(connection):
+            raise KeyError(visit_id)
+        connection.execute(
+            "UPDATE service_visits SET status = ?, updated_at = ? WHERE id = ?",
+            (status, now, visit_id),
+        )
+        row = connection.execute(
+            """
+            SELECT
+                v.id, v.order_id, v.technician_id,
+                COALESCE(t.name, v.technician_name) AS technician_name,
+                v.client, v.address, v.zone, v.category, v.status,
+                v.scheduled_start_at, v.scheduled_end_at, v.duration_minutes,
+                v.feedback_comment, v.created_at, v.updated_at
+            FROM service_visits AS v
+            LEFT JOIN service_technicians AS t ON t.id = v.technician_id
+            WHERE v.id = ?
+            """,
+            (visit_id,),
+        ).fetchone()
+    if row is None:
+        raise KeyError(visit_id)
+    return _row_to_visit(row)
 
 
 def reset_service_visits() -> None:
@@ -953,7 +1261,7 @@ async def update_technician(technician_id: str, request: Request) -> JSONRespons
 
 @router.get("/api/orders")
 async def list_orders() -> list[dict[str, Any]]:
-    return orders
+    return list_service_orders()
 
 
 @router.get("/api/memory/learning")
@@ -966,6 +1274,34 @@ async def list_visits() -> list[dict[str, Any]]:
     return list_service_visits()
 
 
+@router.post("/api/visits")
+async def create_visit(request: Request) -> JSONResponse:
+    body = await parse_body(request)
+    if body is None:
+        return JSONResponse({"error": "JSON inválido"}, status_code=400)
+    try:
+        visit = create_manual_service_visit(body)
+    except KeyError:
+        return JSONResponse({"error": "technician_not_found"}, status_code=404)
+    except (TypeError, ValueError) as error:
+        return JSONResponse({"error": "visit_invalid", "message": str(error)}, status_code=422)
+    return JSONResponse({"visit": visit}, status_code=201)
+
+
+@router.patch("/api/visits/{visit_id}")
+async def update_visit(visit_id: str, request: Request) -> JSONResponse:
+    body = await parse_body(request)
+    if body is None:
+        return JSONResponse({"error": "JSON inválido"}, status_code=400)
+    try:
+        visit = update_service_visit_status(visit_id, str(body.get("status") or ""))
+    except KeyError:
+        return JSONResponse({"error": "visit_not_found"}, status_code=404)
+    except ValueError as error:
+        return JSONResponse({"error": "visit_invalid", "message": str(error)}, status_code=422)
+    return JSONResponse({"visit": visit})
+
+
 @router.post("/api/reset")
 async def reset_simulation(request: Request) -> JSONResponse:
     if not request_is_admin(request, _database_path()):
@@ -973,7 +1309,7 @@ async def reset_simulation(request: Request) -> JSONResponse:
     init_storage()
     reset_service_visits()
     reset_service_technicians()
-    orders[:] = load_seed_list(SEED_ORDERS_PATH)
+    reset_service_orders()
     if SEED_LEARNING_STORE_PATH.exists():
         write_learnings(load_seed_list(SEED_LEARNING_STORE_PATH))
     else:
@@ -985,8 +1321,29 @@ def classify_order(raw_text: str) -> tuple[str, int, list[str]]:
     text = _normalize_text(raw_text)
     if any(term in text for term in ("gas", "fuga", "caldera")):
         return "Gas", 5 if "fuga" in text else 4, ["Gasista Matriculado"]
-    if any(term in text for term in ("luz", "electric", "térmica", "tensión")):
-        priority = 4 if any(term in text for term in ("corte", "urgente")) else 3
+    if any(
+        term in text
+        for term in (
+            "luz",
+            "electric",
+            "térmica",
+            "tensión",
+            "cortocircuito",
+            "corto",
+            "disyuntor",
+            "enchufe",
+            "tablero",
+            "quemad",
+        )
+    ):
+        priority = (
+            4
+            if any(
+                term in text
+                for term in ("corte", "urgente", "urge", "rapido", "rápido", "quemad")
+            )
+            else 3
+        )
         return "Electricidad", priority, ["Técnico Electricista A"]
     if any(term in text for term in ("internet", "enlace", "fibra", "red")):
         skills = ["Redes WAN"]
@@ -998,6 +1355,39 @@ def classify_order(raw_text: str) -> tuple[str, int, list[str]]:
     if any(term in text for term in ("aire", "frío", "hvac", "climatiz")):
         return "Climatización", 3, ["Técnico HVAC"]
     return "Mantenimiento", 2, []
+
+
+def analyze_order_for_legacy_ui(
+    raw_text: str,
+    address: str,
+    zone: str,
+) -> dict[str, Any]:
+    result = build_analyze_stage_from_environment().execute(
+        {
+            "schema_version": "v1",
+            "configuration_version": "analysis-v1",
+            "work_order": {
+                "incident_text": raw_text,
+                "address": address,
+                "zone": zone,
+                "context": None,
+            },
+        }
+    )
+    requirements = result["requirements"]
+    required_skills = [
+        CERTIFICATION_SKILL_LABELS[certification]
+        for certification in requirements["required_certifications"]
+    ]
+    return {
+        "category": CATEGORY_LABELS[requirements["category"]],
+        "subcategory": "Reclamo General",
+        "priority": requirements["priority"],
+        "required_skills": required_skills,
+        "analyze_adapter_metadata": result["adapter_metadata"],
+        "analyze_requirements": requirements,
+        "analyze_warnings": result["warnings"],
+    }
 
 
 @router.post("/api/orders")
@@ -1025,7 +1415,11 @@ async def create_order(request: Request) -> JSONResponse:
             status_code=422,
         )
 
-    category, priority, required_skills = classify_order(str(raw_text))
+    structured_data = analyze_order_for_legacy_ui(
+        str(raw_text),
+        str(address),
+        str(zone),
+    )
     new_order = {
         "id": f"order_{str(int(datetime.now(UTC).timestamp()))[-4:]}",
         "client": "Cliente Solicitante",
@@ -1034,15 +1428,9 @@ async def create_order(request: Request) -> JSONResponse:
         "raw_text": raw_text,
         "status": "pendiente",
         "created_at": datetime.now(UTC).isoformat(),
-        "structured_data": {
-            "category": category,
-            "subcategory": "Reclamo General",
-            "priority": priority,
-            "required_skills": required_skills,
-        },
+        "structured_data": structured_data,
     }
-    orders.insert(0, new_order)
-    return JSONResponse(new_order, status_code=201)
+    return JSONResponse(create_service_order(new_order), status_code=201)
 
 
 def build_candidates(
@@ -1172,7 +1560,7 @@ async def simulate_dispatch(request: Request) -> JSONResponse:
     body = await parse_body(request)
     if body is None:
         return JSONResponse({"error": "JSON inválido"}, status_code=400)
-    order = next((item for item in orders if item["id"] == body.get("order_id")), None)
+    order = get_service_order(str(body.get("order_id", "")))
     if order is None:
         return JSONResponse({"error": "Orden no encontrada"}, status_code=404)
     environment = body.get(
@@ -1192,8 +1580,16 @@ async def simulate_dispatch(request: Request) -> JSONResponse:
         if recommended
         else None
     )
+    analyze_adapter_metadata = order["structured_data"].get(
+        "analyze_adapter_metadata",
+        {"kind": "local", "provider": None, "model": None},
+    )
     response = {
         "order_id": order["id"],
+        "dispatch_state": (
+            "WAIT_FOR_DECISION" if recommended else "NO_FEASIBLE_CANDIDATES"
+        ),
+        "analyze_adapter_metadata": analyze_adapter_metadata,
         "recommended_assignment": (
             {
                 "technician_id": recommended["technician_id"],
@@ -1215,7 +1611,10 @@ async def simulate_dispatch(request: Request) -> JSONResponse:
             "capture": {"agent": "Capture Agent v2.1", "output": order},
             "analyze": {
                 "agent": "Analyze Agent v2.1",
-                "output": order["structured_data"],
+                "output": {
+                    "structured_data": order["structured_data"],
+                    "adapter_metadata": analyze_adapter_metadata,
+                },
             },
             "plan": {"agent": "Planning Agent v2.1", "output": candidates},
             "evaluate": {"agent": "Evaluation Agent v2.1", "output": evaluated},
@@ -1233,7 +1632,7 @@ async def confirm_dispatch(request: Request) -> JSONResponse:
     body = await parse_body(request)
     if body is None:
         return JSONResponse({"error": "JSON inválido"}, status_code=400)
-    order = next((item for item in orders if item["id"] == body.get("order_id")), None)
+    order = get_service_order(str(body.get("order_id", "")))
     technician = get_service_technician(str(body.get("technician_id", "")))
     if order is None or technician is None:
         return JSONResponse({"error": "Orden o Técnico no encontrado"}, status_code=404)
@@ -1318,7 +1717,7 @@ async def confirm_dispatch(request: Request) -> JSONResponse:
         duration_minutes=visit_duration_minutes,
         feedback_comment=feedback,
     )
-    order["status"] = "completada"
+    update_service_order_status(str(order["id"]), "completada")
     update_service_technician(
         technician["id"],
         {"active_workload_hours": technician["active_workload_hours"] + 1.5},

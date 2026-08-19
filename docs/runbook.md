@@ -275,6 +275,12 @@ Use this section as the running implementation log for the final report and proj
 - Added visible score and backend-provided confidence badges in the recommendation panel.
 - Added hard-rule evidence cards with availability, certifications, shift, workload, driving limit, and EPP checks.
 - Added no-feasible UI state that does not force a recommendation when all candidates are rejected.
+- Added seeded `order_003` to demonstrate `NO_FEASIBLE_CANDIDATES` without editing the technician roster.
+- Added visible canonical flow states in the console: `CAPTURE`, `ANALYZE`, `PLAN`, `EVALUATE`, `WAIT_FOR_DECISION`, and `NO_FEASIBLE_CANDIDATES`.
+- Added a no-provider operational map view with local zone markers for technicians and pending orders.
+- Expanded technician profiles with contact, document, and audit fields.
+- Migrated demo service orders into SQLite-backed operational storage bootstrapped from seeds.
+- Expanded the calendar with manual visit scheduling and visit status changes.
 - Verified API output for `order_001`: 5 candidates, 2 approved, 3 rejected, 6 checks per candidate, rejected candidates without score, and backend-provided confidence `0.79 alta`.
 - Verified focused tests: `17 passed`.
 - Verified Docker image build with `docker build -t smart-dispatch-ia:guided-demo .`.
@@ -358,10 +364,45 @@ Use this section as the running implementation log for the final report and proj
   state.
 - Verified focused legacy/migration tests: `49 passed`.
 
+### 2026-08-19 - Operational Admin, Map, Orders, And Evidence Refresh
+
+- Added extended technician profile fields for contact, documents, and audit
+  notes.
+- Added SQLite-backed `service_orders` through Alembic revision
+  `20260819_0011`.
+- Added manual visit scheduling and visit status changes including `en_curso`.
+- Added the local `Mapa Operativo` view without external GIS provider
+  dependency.
+- Added seeded `order_003` to demonstrate `NO_FEASIBLE_CANDIDATES`.
+- Added visible canonical flow chips for `CAPTURE`, `ANALYZE`, `PLAN`,
+  `EVALUATE`, `WAIT_FOR_DECISION`, and `NO_FEASIBLE_CANDIDATES`.
+- Fixed user creation so the admin form's `is_active` checkbox is accepted by
+  `/api/v1/admin/users`.
+- Replaced the frontend screenshots under `docs/evidence/` with current Docker
+  captures, including map, calendar, admin technician profiles, and the
+  no-feasible scenario.
+- Refreshed `api-technicians.json`, `api-orders-after-session.json`, and
+  `docker-session.log` from the current Docker session.
+- Updated final report Markdown, ready Markdown, UX review, README, project
+  status, and PDF generator so they no longer describe completed work as
+  pending.
+- Verified full test suite: `315 passed`.
+
+### 2026-08-19 - Optional Local Ollama Analyze Adapter
+
+- Added `OllamaAnalyzeStage` as an optional local-only adapter for `ANALYZE`.
+- Kept `DeterministicAnalyzeStage` as the default path when
+  `SMART_DISPATCH_ANALYZE_ADAPTER` is unset.
+- Revalidates Ollama proposals through `AnalyzeOutputV1` by delegating final
+  contract construction to the deterministic adapter.
+- Falls back to deterministic analysis when Ollama is unavailable, slow, or
+  returns invalid JSON.
+- Added `docker-compose.ollama.yml` and `.env.ollama.example` for local demos.
+- Kept `render.yaml` unchanged so the public Render deployment does not run or
+  require Ollama.
+- Added `docs/ollama-local-demo.md` with commands and a suggested video flow.
+- Verified focused analyze tests: `37 passed`.
+
 ## Next Technical Actions
 
-- Expand technician profile pages with contact fields and audit history.
-- Expand the calendar into manual scheduling and visit status changes.
-- Add no-cost map visualization.
-- Migrate demo work orders from compatibility storage into SQLite operational records.
-- Add a dedicated seeded `NO_FEASIBLE_CANDIDATES` order.
+- Continue migrating browser workflows from compatibility routes to canonical `/api/v1` commands.
