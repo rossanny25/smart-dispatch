@@ -317,6 +317,10 @@ textarea:focus, input[type="text"]:focus, input[type="password"]:focus, input[ty
   box-shadow: 0 0 0 2px rgba(0, 210, 211, 0.15);
 }
 
+input[type="checkbox"] {
+  accent-color: var(--accent-cyan);
+}
+
 textarea {
   min-height: 80px;
   resize: vertical;
@@ -372,6 +376,125 @@ textarea {
   margin-top: 12px;
   color: var(--text-secondary);
   font-size: 12px;
+}
+
+/* --- ADMINISTRACIÓN DE USUARIOS --- */
+.admin-card[hidden] {
+  display: none;
+}
+
+.admin-user-form {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-glass);
+  margin-bottom: 16px;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.checkbox-row input {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-message {
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-message.info {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-glass);
+}
+
+.admin-message.success {
+  color: var(--color-success);
+  background: rgba(46, 213, 115, 0.1);
+  border: 1px solid rgba(46, 213, 115, 0.24);
+}
+
+.admin-message.error {
+  color: var(--color-danger);
+  background: rgba(255, 71, 87, 0.1);
+  border: 1px solid rgba(255, 71, 87, 0.24);
+}
+
+.admin-users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.admin-user-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-glass);
+  border-radius: 10px;
+}
+
+.admin-user-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.admin-user-main strong {
+  font-family: var(--font-title);
+  font-size: 12px;
+}
+
+.admin-user-main span {
+  color: var(--text-secondary);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.admin-user-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-role-badge {
+  color: var(--accent-cyan);
+  background: rgba(0, 210, 211, 0.1);
+  border: 1px solid rgba(0, 210, 211, 0.22);
+}
+
+.admin-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+  padding: 12px;
 }
 
 /* --- CONSOLA DEL CICLO AGÉNTICO --- */
@@ -1025,6 +1148,11 @@ textarea {
   margin-top: 6px;
 }
 
+.forgot-password-btn {
+  width: 100%;
+  margin-top: 12px;
+}
+
 .login-error {
   color: var(--color-danger);
   background: rgba(255, 71, 87, 0.1);
@@ -1033,4 +1161,29 @@ textarea {
   padding: 10px 12px;
   font-size: 12px;
   margin-bottom: 14px;
+}
+
+.login-help-message {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-glass);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  margin-top: 12px;
+}
+
+@media (max-width: 720px) {
+  .admin-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-user-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-user-meta {
+    justify-content: flex-start;
+  }
 }

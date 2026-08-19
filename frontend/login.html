@@ -35,6 +35,12 @@
           <i class="fa-solid fa-right-to-bracket"></i> Ingresar
         </button>
       </form>
+      <button type="button" class="btn btn-secondary forgot-password-btn" id="forgot-password-btn">
+        <i class="fa-solid fa-key"></i> Olvidé mi contraseña
+      </button>
+      <p class="login-help-message" id="forgot-password-message" hidden>
+        Solicita a un administrador activo que restablezca tu clave desde el panel de usuarios.
+      </p>
     </section>
   </main>
 
@@ -43,6 +49,9 @@
     if (params.get('error') === '1') {
       document.getElementById('login-error').hidden = false;
     }
+    document.getElementById('forgot-password-btn').addEventListener('click', () => {
+      document.getElementById('forgot-password-message').hidden = false;
+    });
   </script>
 </body>
 </html>

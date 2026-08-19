@@ -20,7 +20,7 @@ Read this file before making code, documentation, or deployment changes.
 - Local Docker demo: `http://127.0.0.1:8050`.
 - Published demo: `https://smart-dispatch-q4xk.onrender.com`.
 - GitHub repository: `https://github.com/rossanny25/smart-dispatch`.
-- Demo access: user `tecnico-fisca`, password `smart2026AI`.
+- Demo/admin access: user `admin`, password `smart2026AI`.
 
 ## Critical Rules
 
@@ -34,8 +34,8 @@ Read this file before making code, documentation, or deployment changes.
 - Use `Decimal` for score/confidence arithmetic.
 - Use Pydantic contracts with strict boundary validation.
 - Do not move the project to React, Express, or another stack unless the user explicitly asks.
-- Keep authentication single-user unless the user explicitly asks for roles,
-  registration, or an admin panel.
+- Keep authentication simple and role-based. Do not add registration, external
+  identity, or password email flows unless the user explicitly asks.
 - Do not remove seeds, screenshots, logs, or final-report files. They are product review evidence.
 - Do not revert user changes or unrelated worktree changes.
 
@@ -56,7 +56,7 @@ http://127.0.0.1:8050
 Default login:
 
 ```text
-tecnico-fisca / smart2026AI
+admin / smart2026AI
 ```
 
 Local development:
@@ -105,7 +105,8 @@ The final-cycle delivery is functionally complete:
 - Final Markdown report exists.
 - Final PDF report exists and includes screenshots.
 - README and runbook document how to evaluate the project.
-- Single-user login protects the browser UI and API.
+- SQLite-backed users and roles protect the browser UI and API.
+- Basic user administration exists for admins.
 - Guided demo flow exists in the UI.
 - Hard-rule evidence is visible before score in the recommendation panel.
 

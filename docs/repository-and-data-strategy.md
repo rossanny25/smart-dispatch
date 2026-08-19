@@ -31,9 +31,9 @@ Splitting backend/frontend can be deferred until the project needs independent d
 
 ## Data Loading Decision
 
-The prototype has single-user login for the operational demo, but no admin panel
-or public data-import UI. Data is loaded through reproducible seeds and local
-runtime persistence.
+The prototype has SQLite-backed users and a basic admin panel for account and
+role management, but no public data-import UI. Dispatch data is loaded through
+reproducible seeds and local runtime persistence.
 
 Current strategy:
 
@@ -44,7 +44,8 @@ Current strategy:
 - Local Python stores SQLite state in `data/smart_dispatch.db`.
 - Alembic is used for database structure, not for demo content.
 
-This is enough for the current product scope because the goal is to demonstrate orchestration, memory, explainability, and reproducibility rather than user administration.
+This is enough for the current product scope because account administration now
+exists, while dispatch-data management remains reproducible and controlled.
 
 ## How To Add Or Change Demo Data
 
@@ -89,8 +90,9 @@ For the final report, state that public data management is intentionally out of 
 
 ## What To Tell The Teacher
 
-Smart Dispatch IA is a single-user dispatch simulator. It uses login for basic
-access control, seed files for reproducible scenarios, SQLite for runtime
-persistence, and Alembic for controlled schema evolution. There is no admin
-panel because the product focus is the agentic dispatch cycle and persistent
-memory, not multi-user data operations.
+Smart Dispatch IA is a dispatch simulator with basic account administration. It
+uses SQLite-backed login and roles for access control, seed files for
+reproducible dispatch scenarios, SQLite for runtime persistence, and Alembic for
+controlled schema evolution. The current admin panel manages users; technician
+profiles, calendars, maps, and dispatch-data editing belong to later product
+slices.

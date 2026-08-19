@@ -58,8 +58,29 @@ Docker, Render y documentacion tecnica de producto.
 - [x] Mostrar reglas duras por tecnico antes del score.
 - [x] Separar visualmente score objetivo y confianza de recomendacion.
 - [x] Agregar login single-user para proteger UI y API.
+
+## Fase 6: Administracion Operativa (En progreso)
+
+- [x] Crear usuarios persistidos en SQLite.
+- [x] Crear usuario inicial `admin` con clave `smart2026AI`.
+- [x] Validar login contra la base de datos.
+- [x] Agregar roles basicos `admin`, `tecnico` y `dispatcher`.
+- [x] Agregar panel admin para listar, crear y editar usuarios.
+- [x] Proteger rutas de administracion para rol `admin`.
+- [x] Agregar accion visible de olvido de contraseña con recuperacion manual.
+- [x] Revalidar sesiones contra SQLite en cada request protegido.
+- [x] Agregar idempotencia basica en creacion/edicion de usuarios.
+- [x] Configurar secreto de sesion generado y cookie segura para Render.
+- [x] Limitar payload de login para reducir abuso.
+- [ ] Crear fichas completas de tecnicos.
+- [ ] Agregar horarios y disponibilidad editable por tecnico.
+- [ ] Agregar calendario de visitas por tecnico.
+- [ ] Agregar vista de mapa sin dependencia paga.
+- [ ] Migrar tecnicos/ordenes demo desde JSON bootstrap a datos operativos SQLite.
 - [ ] Mostrar `DispatchRun` canonico de `/api/v1` en el frontend.
 - [ ] Implementar decision humana y outcome completo sobre API canonica.
+- [ ] Mover endpoints admin al sobre canonico completo de `/api/v1`.
+- [ ] Integrar escrituras admin al Unit of Work principal.
 - [ ] Agregar escenario explicito de `NO_FEASIBLE_CANDIDATES`.
 - [ ] Mostrar estados canonicos `CAPTURE`, `ANALYZE`, `PLAN`, `EVALUATE` y `WAIT_FOR_DECISION`.
 - [ ] Evaluar Ollama como adaptador local opcional de `ANALYZE`.

@@ -7,6 +7,8 @@ let orders = [];
 let memoryLearnings = [];
 let currentSimulationData = null;
 let selectedOrder = null;
+let currentSession = null;
+let adminUsers = [];
 
 // Elementos del DOM
 const orderForm = document.getElementById('order-form');
@@ -19,6 +21,18 @@ const gpsSelect = document.getElementById('gps-select');
 const btnReset = document.getElementById('btn-reset');
 const btnGuidedDemo = document.getElementById('btn-guided-demo');
 const btnLogout = document.getElementById('btn-logout');
+const adminUsersCard = document.getElementById('admin-users-card');
+const adminUsersState = document.getElementById('admin-users-state');
+const adminUserForm = document.getElementById('admin-user-form');
+const adminUserId = document.getElementById('admin-user-id');
+const adminUsername = document.getElementById('admin-username');
+const adminDisplayName = document.getElementById('admin-display-name');
+const adminRole = document.getElementById('admin-role');
+const adminPassword = document.getElementById('admin-password');
+const adminActive = document.getElementById('admin-active');
+const adminClearUser = document.getElementById('admin-clear-user');
+const adminUsersMessage = document.getElementById('admin-users-message');
+const adminUsersList = document.getElementById('admin-users-list');
 const guidedDemoState = document.getElementById('guided-demo-state');
 const guidedDemoMessage = document.getElementById('guided-demo-message');
 const guidedDemoSteps = document.querySelectorAll('.guided-step');
@@ -92,6 +106,188 @@ function setGuidedDemoStatus(message, state = 'running', activeStep = null) {
     }
   });
 }
+
+function normalizeUsers(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.users)) return payload.users;
+  if (Array.isArray(payload?.items)) return payload.items;
+  return [];
+}
+
+function showAdminMessage(message, type = 'info') {
+  adminUsersMessage.hidden = false;
+  adminUsersMessage.textContent = message;
+  adminUsersMessage.className = `admin-message ${type}`;
+}
+
+function clearAdminMessage() {
+  adminUsersMessage.hidden = true;
+  adminUsersMessage.textContent = '';
+  adminUsersMessage.className = 'admin-message';
+}
+
+function resetAdminForm() {
+  adminUserForm.reset();
+  adminUserId.value = '';
+  adminActive.checked = true;
+  adminRole.value = 'tecnico';
+  adminPassword.placeholder = 'Requerida al crear';
+  adminUsername.disabled = false;
+  clearAdminMessage();
+}
+
+async function fetchJson(url, options = {}) {
+  const method = (options.method || 'GET').toUpperCase();
+  const isCanonicalMutation = url.includes('/api/v1/') && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(isCanonicalMutation ? { 'Idempotency-Key': crypto.randomUUID() } : {}),
+      ...(options.headers || {})
+    }
+  });
+
+  let payload = null;
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    payload = await response.json();
+  }
+
+  if (!response.ok) {
+    const message = payload?.detail || payload?.message || `Solicitud rechazada (${response.status})`;
+    throw new Error(message);
+  }
+
+  return payload;
+}
+
+async function loadSession() {
+  try {
+    currentSession = await fetchJson(`${API_BASE}/auth/session`);
+  } catch (error) {
+    currentSession = null;
+    console.warn('No se pudo leer la sesión actual:', error);
+  }
+
+  const sessionRole = currentSession?.role || currentSession?.user?.role;
+  if (sessionRole === 'admin') {
+    adminUsersCard.hidden = false;
+    await loadAdminUsers();
+  } else {
+    adminUsersCard.hidden = true;
+  }
+}
+
+async function loadAdminUsers() {
+  const sessionRole = currentSession?.role || currentSession?.user?.role;
+  if (sessionRole !== 'admin') return;
+
+  adminUsersState.textContent = 'Cargando';
+  adminUsersState.className = 'badge badge-status-pendiente';
+  try {
+    const payload = await fetchJson(`${API_BASE}/api/v1/admin/users`);
+    adminUsers = normalizeUsers(payload);
+    renderAdminUsers();
+    adminUsersState.textContent = `${adminUsers.length} usuarios`;
+    adminUsersState.className = 'badge badge-status-completada';
+  } catch (error) {
+    adminUsers = [];
+    renderAdminUsers();
+    adminUsersState.textContent = 'No disponible';
+    adminUsersState.className = 'badge badge-status-error';
+    showAdminMessage(error.message, 'error');
+  }
+}
+
+function renderAdminUsers() {
+  adminUsersList.innerHTML = '';
+
+  if (adminUsers.length === 0) {
+    adminUsersList.innerHTML = '<div class="admin-empty">No hay usuarios para mostrar.</div>';
+    return;
+  }
+
+  adminUsers.forEach(user => {
+    const isActive = user.active ?? user.is_active ?? true;
+    const displayName = user.display_name || user.name || user.username;
+    const row = document.createElement('div');
+    row.className = 'admin-user-row';
+    row.innerHTML = `
+      <div class="admin-user-main">
+        <strong>${escapeHtml(displayName)}</strong>
+        <span>${escapeHtml(user.username)}</span>
+      </div>
+      <div class="admin-user-meta">
+        <span class="badge admin-role-badge">${escapeHtml(user.role)}</span>
+        <span class="badge ${isActive ? 'badge-status-completada' : 'badge-status-error'}">${isActive ? 'Activo' : 'Inactivo'}</span>
+        <button type="button" class="btn btn-secondary btn-admin-edit" data-user-id="${escapeHtml(user.id)}">
+          <i class="fa-solid fa-pen-to-square"></i> Editar
+        </button>
+      </div>
+    `;
+    adminUsersList.appendChild(row);
+  });
+
+  document.querySelectorAll('.btn-admin-edit').forEach(button => {
+    button.addEventListener('click', () => {
+      const user = adminUsers.find(item => String(item.id) === button.dataset.userId);
+      if (!user) return;
+      adminUserId.value = user.id;
+      adminUsername.value = user.username || '';
+      adminUsername.disabled = true;
+      adminDisplayName.value = user.display_name || user.name || user.username || '';
+      adminRole.value = user.role || 'tecnico';
+      adminActive.checked = user.active ?? user.is_active ?? true;
+      adminPassword.value = '';
+      adminPassword.placeholder = 'Dejar vacía para conservar';
+      clearAdminMessage();
+      adminUserForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+}
+
+adminUserForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  const isEditing = Boolean(adminUserId.value);
+  const payload = {
+    display_name: adminDisplayName.value.trim(),
+    role: adminRole.value,
+    is_active: adminActive.checked
+  };
+  if (!isEditing) {
+    payload.username = adminUsername.value.trim();
+  }
+
+  if (adminPassword.value.trim()) {
+    payload.password = adminPassword.value;
+  }
+
+  if (!isEditing && !payload.password) {
+    showAdminMessage('La clave es requerida al crear un usuario.', 'error');
+    return;
+  }
+
+  try {
+    await fetchJson(
+      isEditing
+        ? `${API_BASE}/api/v1/admin/users/${encodeURIComponent(adminUserId.value)}`
+        : `${API_BASE}/api/v1/admin/users`,
+      {
+        method: isEditing ? 'PATCH' : 'POST',
+        body: JSON.stringify(payload)
+      }
+    );
+    resetAdminForm();
+    await loadAdminUsers();
+    showAdminMessage(isEditing ? 'Usuario actualizado.' : 'Usuario creado.', 'success');
+  } catch (error) {
+    showAdminMessage(error.message, 'error');
+  }
+});
+
+adminClearUser.addEventListener('click', resetAdminForm);
 
 // --- CARGA INICIAL DE DATOS ---
 
@@ -665,4 +861,7 @@ btnLogout.addEventListener('click', async () => {
 });
 
 // Inicialización de la consola al cargar página
-window.addEventListener('load', loadData);
+window.addEventListener('load', async () => {
+  await loadSession();
+  await loadData();
+});

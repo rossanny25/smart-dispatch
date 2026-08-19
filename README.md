@@ -33,15 +33,15 @@ uv run smart-dispatch
 Open `http://127.0.0.1:8000`. The application is intentionally bound to
 `127.0.0.1:8000` with one Uvicorn worker by default.
 
-Default demo login:
+Default admin login:
 
-- User: `tecnico-fisca`
+- User: `admin`
 - Password: `smart2026AI`
 
-The credentials can be overridden with `SMART_DISPATCH_LOGIN_USER` and
-`SMART_DISPATCH_LOGIN_PASSWORD`. Set `SMART_DISPATCH_SESSION_SECRET` in any
-shared or hosted environment so session cookies are signed with a private
-deployment secret.
+The initial admin credentials can be overridden with
+`SMART_DISPATCH_LOGIN_USER` and `SMART_DISPATCH_LOGIN_PASSWORD`. Set
+`SMART_DISPATCH_SESSION_SECRET` in any shared or hosted environment so session
+cookies are signed with a private deployment secret.
 
 The temporary compatibility entry point runs the same canonical launcher:
 
@@ -113,9 +113,9 @@ This slice captures only schema-valid raw input. Dispatch analysis, derived
 requirements, recommendations, and browser migration belong to later stories,
 so the current SPA continues to use the compatibility API.
 
-This MVP is local-first and uses single-user access control. HTTPS termination,
-multi-user operation, roles, and a public administration panel remain outside
-its current scope.
+This MVP is local-first and uses SQLite-backed users with basic roles. HTTPS
+termination, public self-registration, password email delivery, and a full
+technician operations portal remain outside its current scope.
 
 For the final delivery checklist, see
 [`docs/final-delivery-guide.md`](docs/final-delivery-guide.md).

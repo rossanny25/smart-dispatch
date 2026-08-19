@@ -17,10 +17,10 @@ Open:
 http://127.0.0.1:8050
 ```
 
-Default demo login:
+Default admin login:
 
 ```text
-User: tecnico-fisca
+User: admin
 Password: smart2026AI
 ```
 
@@ -63,9 +63,34 @@ uv run python3 server.py
 | `SMART_DISPATCH_PORT` | `8000` | `8050` | HTTP port for the app. |
 | `SMART_DISPATCH_DB_PATH` | `data/smart_dispatch.db` | `/app/runtime-data/smart_dispatch.db` | SQLite runtime database. |
 | `SMART_DISPATCH_LEARNING_STORE_PATH` | `data/learning_store.runtime.json` | `/app/runtime-data/learning_store.runtime.json` | Runtime copy of brownfield learning memory. |
-| `SMART_DISPATCH_LOGIN_USER` | `tecnico-fisca` | unset | Single-user login name. |
-| `SMART_DISPATCH_LOGIN_PASSWORD` | `smart2026AI` | unset | Single-user login password. |
-| `SMART_DISPATCH_SESSION_SECRET` | local dev fallback | unset | Secret used to sign session cookies; set this in hosted/shared environments. |
+| `SMART_DISPATCH_LOGIN_USER` | `admin` | unset | Initial admin login name. |
+| `SMART_DISPATCH_LOGIN_PASSWORD` | `smart2026AI` | unset | Initial admin login password. |
+| `SMART_DISPATCH_SESSION_SECRET` | local dev fallback | generated on Render | Secret used to sign session cookies; set this in hosted/shared environments. |
+| `SMART_DISPATCH_COOKIE_SECURE` | unset | `true` | Sends session cookies as secure cookies when serving over HTTPS. |
+
+## User Administration
+
+The first runtime startup after migrations creates an active admin account:
+
+```text
+admin / smart2026AI
+```
+
+Admin users can manage accounts from the in-app "Administracion de Usuarios"
+panel. Supported roles are:
+
+- `admin`
+- `tecnico`
+- `dispatcher`
+
+Passwords are stored as PBKDF2 hashes in SQLite. The app rejects attempts to
+disable or demote the last active admin. Active sessions are revalidated
+against SQLite, so disabled or demoted users lose access on the next request.
+
+Create and update operations under `/api/v1/admin/users` require
+`Idempotency-Key` through the canonical middleware. Repeating the same key with
+the same payload replays the stored response; repeating it with a different
+payload returns an idempotency conflict.
 
 ## Verify The App Is Running
 
@@ -225,17 +250,41 @@ Use this section as the running implementation log for the final report and proj
 - Protected browser and API routes with a signed `smart_dispatch_session` cookie.
 - Kept `/healthz`, `/login`, `/auth/login`, and `/index.css` public.
 - Added JSON and form login support without introducing extra multipart dependencies.
-- Default demo credential: `tecnico-fisca` / `smart2026AI`.
+- Default demo credential: `admin` / `smart2026AI`.
 - Added environment overrides for username, password, and session signing secret.
 - Verified focused tests: `29 passed`.
 - Verified Docker HTTP behavior on port `8050`: `/login` returned `200`,
   unauthenticated `/api/orders` returned `401`, JSON login returned `200`, and
   authenticated `/api/orders` returned `200`.
 
+### 2026-08-18 - User And Role Administration
+
+- Added SQLite `app_users` storage through Alembic revision `20260818_0008`.
+- Added startup bootstrap for initial admin `admin` / `smart2026AI`.
+- Replaced fixed credential validation with DB-backed password verification.
+- Stored passwords with salted PBKDF2 hashes.
+- Extended signed session cookies with user id, username, role, and expiry.
+- Added `/api/v1/admin/users` list/create/update endpoints for admins.
+- Added last-active-admin protection.
+- Added a frontend "Administracion de Usuarios" panel visible to admins.
+- Added a visible forgot-password action with manual recovery guidance.
+- Revalidated active sessions against SQLite on every protected request.
+- Added idempotency replay/conflict handling for admin create/update actions.
+- Added Render session-secret generation and secure HTTPS cookies.
+- Added login payload size protection.
+- Verified focused tests: `65 passed`.
+- Verified Docker HTTP behavior on port `8050`: `/login` returned `200`,
+  unauthenticated `/api/v1/admin/users` returned `401`, admin login returned
+  `200`, `/auth/session` returned `role=admin`, user list returned `200`, and
+  creating a `tecnico` user returned `201`.
+- Verified updated auth/admin/migration/runtime checks: `63 passed, 1
+  deselected`; the deselected test is an existing timing-sensitive startup-lock
+  assertion.
+
 ## Next Technical Actions
 
+- Build technician profile pages with schedules and availability.
+- Add visit calendar views per technician.
+- Add no-cost map visualization.
+- Migrate demo technicians/orders from JSON bootstrap into SQLite operational records.
 - Add a dedicated seeded `NO_FEASIBLE_CANDIDATES` order.
-- Surface canonical `DispatchRun` state transitions from `/api/v1` in the frontend.
-- Move human decision and service outcome to canonical `/api/v1` commands.
-- Add memory on/off comparison scenarios.
-- Improve keyboard accessibility and semantic labels.

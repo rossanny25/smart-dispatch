@@ -133,10 +133,10 @@ Cada componente se normaliza entre 0 y 100. Los calculos autoritativos usan `Dec
 
 ## 8. Memoria Persistente Y Datos
 
-El sistema utiliza datos semilla reproducibles, persistencia SQLite y login
-single-user para proteger la UI y las rutas API. No incluye panel de
-administracion ni roles; la decision se documenta como limite operativo y no
-como omision accidental.
+El sistema utiliza datos semilla reproducibles, persistencia SQLite, usuarios
+persistidos y login con roles basicos para proteger la UI y las rutas API.
+Incluye un panel admin para listar, crear y editar usuarios. Las fichas
+completas de tecnicos, calendarios y mapas quedan como evolucion operativa.
 
 Estrategia de datos:
 
@@ -268,7 +268,7 @@ Riesgos y mitigaciones:
 | Riesgo | Mitigacion actual |
 | --- | --- |
 | Exposicion accidental | Default local `127.0.0.1`; Docker/deploy explicitamente configurados; login single-user. |
-| Credenciales compartidas | Cookie firmada y credencial configurable; usuarios/roles quedan para una etapa multiusuario. |
+| Cuentas operativas | Roles admin/tecnico/dispatcher, rutas admin protegidas y ultimo admin activo preservado. |
 | Datos sensibles | Se evita loguear direcciones completas o GPS exacto en evidencia estructurada futura. |
 | Payloads malformados | Middleware canonico con limite 1 MiB y errores tipados en `/api/v1`. |
 | Excepciones inseguras | Mapeo a respuestas seguras para errores conocidos. |
@@ -357,8 +357,9 @@ Esto no invalida la publicacion del MVP, porque el proyecto conserva seeds repro
 
 Limitaciones intencionales:
 
-- No hay panel admin.
-- No hay roles, registro de usuarios ni recuperacion de clave.
+- No hay fichas completas de tecnicos.
+- No hay calendario de visitas ni mapa operativo.
+- No hay registro publico de usuarios ni recuperacion de clave por email.
 - La gestion de datos demo se hace por seeds JSON.
 - La UI legacy todavia muestra algunas trazas descriptivas.
 - No se implementa aprendizaje semantico completo de produccion.

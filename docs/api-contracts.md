@@ -58,6 +58,22 @@ Accepts an order, selected technician, override flag/feedback, and optional real
 
 Resets in-memory workloads and order statuses. It does not reliably restore the learning file to its original seed because initialization only writes when the file is absent.
 
+## GET `/api/v1/admin/users`
+
+Requires role `admin`. Returns persisted application users without password
+material.
+
+## POST `/api/v1/admin/users`
+
+Requires role `admin` and `Idempotency-Key`. Creates a user with `username`,
+`display_name`, `role`, and `password`. Passwords are stored as PBKDF2 hashes.
+
+## PATCH `/api/v1/admin/users/{user_id}`
+
+Requires role `admin` and `Idempotency-Key`. Updates display name, role, active
+state, and optionally password. The API rejects attempts to disable or demote
+the last active admin.
+
 ## Required Contract Evolution
 
 The PRD requires:

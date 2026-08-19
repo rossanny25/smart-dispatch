@@ -7,7 +7,7 @@
 | Aplicacion en vivo | <https://smart-dispatch-q4xk.onrender.com> |
 | Repositorio GitHub | <https://github.com/rossanny25/smart-dispatch> |
 | Demo local Docker | <http://127.0.0.1:8050> |
-| Acceso demo | Usuario `tecnico-fisca` / clave `smart2026AI` |
+| Acceso demo | Usuario `admin` / clave `smart2026AI` |
 | Guia de ejecucion | [docs/runbook.md](./runbook.md) |
 | Evidencia de sesion | [docs/usage-session-log.md](./usage-session-log.md) |
 
@@ -256,12 +256,12 @@ Memoria y datos:
 - Runtime SQLite local: `data/smart_dispatch.db`.
 - Runtime Docker: volumen `smart_dispatch_data`.
 - Reset operativo rapido: `POST /api/reset` o `docker compose down -v`.
-- Acceso demo: usuario `tecnico-fisca`, clave `smart2026AI`.
+- Acceso demo: usuario `admin`, clave `smart2026AI`.
 
-El sistema incluye login single-user para proteger la UI y las rutas API con
-cookie de sesion firmada. No incluye panel de administracion ni roles: la carga
-de informacion se realiza por seeds JSON versionados y por el flujo de
-aprendizaje del simulador.
+El sistema incluye usuarios persistidos en SQLite, roles basicos y login con
+cookie de sesion firmada. Existe un panel admin para listar, crear y editar
+usuarios. La carga operativa de ordenes y tecnicos de demo todavia se realiza
+por seeds JSON versionados y por el flujo de aprendizaje del simulador.
 
 ## 9. Capturas del frontend
 
@@ -354,7 +354,7 @@ Conclusion UX: la interfaz es suficiente para operar el MVP. Su siguiente mejora
 | Riesgo | Impacto | Mitigacion actual | Limitacion pendiente |
 | --- | --- | --- | --- |
 | Exposicion accidental | Acceso no deseado al prototipo. | Default local `127.0.0.1`; Docker explicito en `8050`; login single-user. | Produccion requiere HTTPS y politicas de red. |
-| Credenciales compartidas | Un unico usuario no permite atribucion por operador. | Cookie firmada y credencial configurable por entorno. | Agregar usuarios, roles y auditoria antes de uso multiusuario. |
+| Cuentas operativas | Usuarios o roles mal configurados podrian abrir funciones sensibles. | Roles `admin`, `tecnico` y `dispatcher`; rutas admin protegidas; ultimo admin activo no puede desactivarse. | Agregar auditoria y politicas de contrasena antes de uso productivo. |
 | Datos sensibles | Direcciones/GPS podrian exponer privacidad. | Evidencia demo y recomendacion de memoria por zona. | Politica formal para datos reales. |
 | JSON malformado o grande | Degradacion o errores inseguros. | `/api/v1` limita 1 MiB y usa errores tipados. | Migrar rutas legacy restantes. |
 | Excepciones inseguras | Fuga de detalles internos. | Errores conocidos se mapean a respuestas estables. | Politica completa de errores productivos. |
@@ -461,8 +461,9 @@ Esto no invalida la publicacion del MVP porque el proyecto conserva seeds reprod
 
 Limitaciones intencionales:
 
-- No hay panel admin.
-- No hay roles, registro de usuarios ni recuperacion de clave.
+- No hay fichas completas de tecnicos.
+- No hay calendario de visitas ni mapa operativo.
+- No hay registro publico de usuarios ni recuperacion de clave por email.
 - La gestion de datos demo se hace por seeds JSON.
 - La UI legacy todavia muestra algunas trazas descriptivas.
 - No se implementa aprendizaje semantico completo de produccion.

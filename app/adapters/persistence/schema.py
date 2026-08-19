@@ -63,6 +63,31 @@ configuration_versions = Table(
     ),
 )
 
+app_users = Table(
+    "app_users",
+    metadata,
+    Column("id", Text, primary_key=True, nullable=False),
+    Column("username", Text, nullable=False),
+    Column("display_name", Text, nullable=False),
+    Column("role", Text, nullable=False),
+    Column("password_hash", Text, nullable=False),
+    Column("is_active", Integer, nullable=False),
+    Column("created_at", Text, nullable=False),
+    Column("updated_at", Text, nullable=False),
+    UniqueConstraint("username", name="uq_app_users_username"),
+    CheckConstraint(
+        "role IN ('admin','tecnico','dispatcher')",
+        name="ck_app_users_role",
+    ),
+    CheckConstraint("is_active IN (0, 1)", name="ck_app_users_active"),
+    CheckConstraint("length(username) BETWEEN 3 AND 80", name="ck_app_users_username"),
+    CheckConstraint("length(display_name) BETWEEN 1 AND 120", name="ck_app_users_name"),
+    CheckConstraint(
+        "password_hash LIKE 'pbkdf2_sha256$%'",
+        name="ck_app_users_password_hash",
+    ),
+)
+
 work_order_analyses = Table(
     "work_order_analyses",
     metadata,
