@@ -109,6 +109,8 @@ The final-cycle delivery is functionally complete:
 - SQLite-backed users and roles protect the browser UI and API.
 - Basic user administration exists for admins.
 - SQLite-backed service technicians can be created and edited by admins.
+- The browser UI uses section navigation; user and technician administration
+  live in the separate admin window, not in the main dispatch view.
 - Guided demo flow exists in the UI.
 - Hard-rule evidence is visible before score in the recommendation panel.
 

@@ -9,6 +9,7 @@ let currentSimulationData = null;
 let selectedOrder = null;
 let currentSession = null;
 let adminUsers = [];
+let activeView = 'request';
 
 // Elementos del DOM
 const orderForm = document.getElementById('order-form');
@@ -22,6 +23,13 @@ const gpsSelect = document.getElementById('gps-select');
 const btnReset = document.getElementById('btn-reset');
 const btnGuidedDemo = document.getElementById('btn-guided-demo');
 const btnLogout = document.getElementById('btn-logout');
+const navButtons = document.querySelectorAll('.section-nav-btn[data-view-target]');
+const appViews = document.querySelectorAll('.app-view[data-view]');
+const btnAdminOpen = document.getElementById('btn-admin-open');
+const adminWindow = document.getElementById('admin-window');
+const adminWindowBody = document.getElementById('admin-window-body');
+const adminWindowClose = document.getElementById('admin-window-close');
+const adminTabButtons = document.querySelectorAll('.admin-tab-btn');
 const adminUsersCard = document.getElementById('admin-users-card');
 const adminUsersState = document.getElementById('admin-users-state');
 const adminUserForm = document.getElementById('admin-user-form');
@@ -161,6 +169,63 @@ function statusLabel(status) {
   return labels[status] || status || 'No informado';
 }
 
+function switchAppView(viewName) {
+  const targetExists = Array.from(appViews).some(view => view.dataset.view === viewName);
+  if (!targetExists) return;
+  activeView = viewName;
+
+  appViews.forEach(view => {
+    view.classList.toggle('view-hidden', view.dataset.view !== viewName);
+  });
+
+  navButtons.forEach(button => {
+    const active = button.dataset.viewTarget === viewName;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-current', active ? 'page' : 'false');
+  });
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function getActiveView() {
+  return activeView;
+}
+
+function initializeAdminWindow() {
+  if (!adminWindowBody) return;
+  [adminUsersCard, adminTechCard].forEach(card => {
+    if (card && card.parentElement !== adminWindowBody) {
+      adminWindowBody.appendChild(card);
+    }
+  });
+  switchAdminTab('users');
+}
+
+function switchAdminTab(tabName) {
+  adminTabButtons.forEach(button => {
+    const active = button.dataset.adminTab === tabName;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+
+  document.querySelectorAll('.admin-tab-panel').forEach(panel => {
+    panel.hidden = panel.dataset.adminTabPanel !== tabName;
+  });
+}
+
+function openAdminWindow(tabName = 'users') {
+  if (!isAdminSession() || !adminWindow) return;
+  switchAdminTab(tabName);
+  adminWindow.hidden = false;
+  document.body.classList.add('admin-window-open');
+}
+
+function closeAdminWindow() {
+  if (!adminWindow) return;
+  adminWindow.hidden = true;
+  document.body.classList.remove('admin-window-open');
+}
+
 function showOrderValidation(message, type = 'error') {
   orderValidationMessage.hidden = false;
   orderValidationMessage.textContent = message;
@@ -274,6 +339,36 @@ function fillAdminTechForm(tech) {
   adminTechForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+navButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    switchAppView(button.dataset.viewTarget);
+  });
+});
+
+btnAdminOpen.addEventListener('click', () => {
+  openAdminWindow('users');
+});
+
+adminWindowClose.addEventListener('click', closeAdminWindow);
+
+adminWindow.addEventListener('click', (event) => {
+  if (event.target === adminWindow) {
+    closeAdminWindow();
+  }
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !adminWindow.hidden) {
+    closeAdminWindow();
+  }
+});
+
+adminTabButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    switchAdminTab(button.dataset.adminTab);
+  });
+});
+
 function buildTechnicianPayload() {
   return {
     name: adminTechName.value.trim(),
@@ -334,12 +429,13 @@ async function loadSession() {
   }
 
   if (isAdminSession()) {
-    adminUsersCard.hidden = false;
-    adminTechCard.hidden = false;
+    btnAdminOpen.hidden = false;
     await loadAdminUsers();
   } else {
+    btnAdminOpen.hidden = true;
     adminUsersCard.hidden = true;
     adminTechCard.hidden = true;
+    closeAdminWindow();
   }
 }
 
@@ -574,7 +670,10 @@ function renderTechnicians() {
   document.querySelectorAll('.btn-tech-edit').forEach(button => {
     button.addEventListener('click', () => {
       const tech = technicians.find(item => String(item.id) === button.dataset.techId);
-      if (tech) fillAdminTechForm(tech);
+      if (tech) {
+        openAdminWindow('technicians');
+        fillAdminTechForm(tech);
+      }
     });
   });
 }
@@ -746,6 +845,9 @@ function renderHardRuleEvidence(candidates = []) {
 }
 
 function showNoFeasibleState(responseData) {
+  if (getActiveView() !== 'console') {
+    switchAppView('console');
+  }
   recommendationBox.style.display = 'none';
   dispatcherActionsBox.style.display = 'none';
   noFeasibleBox.style.display = 'block';
@@ -794,6 +896,7 @@ orderForm.addEventListener('submit', async (e) => {
 async function startAgentSimulation(orderId) {
   selectedOrder = orders.find(o => o.id === orderId);
   if (!selectedOrder) return;
+  switchAppView('console');
 
   // Limpiar estados de UI
   recommendationCard.style.display = 'none';
@@ -861,21 +964,37 @@ async function startAgentSimulation(orderId) {
   };
 
   let responseData = null;
+  let simulationError = null;
   try {
     const res = await fetch(`${API_BASE}/api/dispatch/simulate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(simulatePayload)
     });
-    if (res.ok) {
-      responseData = await res.json();
-      currentSimulationData = responseData;
+    if (!res.ok) {
+      throw new Error(`Simulación rechazada (${res.status})`);
     }
+    responseData = await res.json();
+    currentSimulationData = responseData;
   } catch (error) {
+    simulationError = error;
     console.error('Error al simular agentes:', error);
   }
 
   await sleep(1000);
+  if (simulationError || !responseData) {
+    stepPlan.classList.remove('running');
+    stepPlan.classList.add('error');
+    stepPlan.querySelector('.step-summary').textContent = 'No se pudo completar la simulación';
+    stepPlan.querySelector('.step-status').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+    cycleStatusText.textContent = 'Error';
+    cycleStatusText.className = 'badge badge-status-error';
+    detailsAgentTitle.textContent = 'Simulación no completada';
+    detailsJsonOutput.textContent = simulationError?.message || 'No se recibió respuesta del servicio de despacho.';
+    alert("No se pudo completar la simulación de despacho. Revisa el estado del servicio e intenta nuevamente.");
+    return null;
+  }
+
   stepPlan.classList.remove('running');
   stepPlan.classList.add('completed');
   stepPlan.querySelector('.step-summary').textContent = 'Candidatos ponderados';
@@ -926,6 +1045,9 @@ async function startAgentSimulation(orderId) {
     renderDecisionBreakdown(rec, responseData);
     renderHardRuleEvidence(responseData.candidates || []);
     recommendationCard.style.display = 'block';
+    if (getActiveView() !== 'console') {
+      switchAppView('console');
+    }
     
     // Auto-scroll a la recomendación
     recommendationCard.scrollIntoView({ behavior: 'smooth' });
@@ -1043,12 +1165,15 @@ completionForm.addEventListener('submit', async (e) => {
       // Resetear UI
       completionModal.style.display = 'none';
       recommendationCard.style.display = 'none';
-      agentCycleCard.style.display = 'none';
+      agentCycleCard.style.display = 'block';
+      cycleStatusText.textContent = 'En espera';
+      cycleStatusText.className = 'badge badge-status-pendiente';
       currentSimulationData = null;
       selectedOrder = null;
 
       // Recargar datos
       await loadData();
+      switchAppView('orders');
     }
   } catch (error) {
     console.error('Error al confirmar despacho:', error);
@@ -1068,13 +1193,16 @@ async function resetSimulation({ showConfirm = true, showAlert = true } = {}) {
       throw new Error(`Reset falló con estado ${res.status}`);
     }
     recommendationCard.style.display = 'none';
-    agentCycleCard.style.display = 'none';
+    agentCycleCard.style.display = 'block';
+    cycleStatusText.textContent = 'En espera';
+    cycleStatusText.className = 'badge badge-status-pendiente';
     currentSimulationData = null;
     selectedOrder = null;
     hardRulesSummary.textContent = 'Sin evaluación';
     hardRulesList.innerHTML = '';
 
     await loadData();
+    switchAppView('request');
     if (showAlert) {
       alert("Simulación y memoria persistente reseteados a valores de fábrica.");
     }
@@ -1090,6 +1218,7 @@ btnReset.addEventListener('click', async () => {
 });
 
 btnGuidedDemo.addEventListener('click', async () => {
+  switchAppView('guided');
   btnGuidedDemo.disabled = true;
   setGuidedDemoStatus('Restaurando datos reproducibles...', 'running', 'reset');
 
@@ -1141,6 +1270,8 @@ btnLogout.addEventListener('click', async () => {
 
 // Inicialización de la consola al cargar página
 window.addEventListener('load', async () => {
+  initializeAdminWindow();
+  switchAppView('request');
   await loadSession();
   if (isAdminSession()) {
     resetAdminTechForm();

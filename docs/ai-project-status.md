@@ -1,6 +1,6 @@
 # AI Project Status - Smart Dispatch IA
 
-Last updated: 2026-08-18
+Last updated: 2026-08-19
 
 This file is the live handoff for any AI agent or human collaborator joining
 the project. It summarizes what exists, what is done, what is intentionally out
@@ -56,6 +56,7 @@ cold start before judging the deployment.
 | Hard-rule evidence in UI | Done | Simulation exposes all technicians with pass/fail checks before score. |
 | User and role administration | Done | SQLite-backed users, admin bootstrap, role-aware login, and admin UI. |
 | Technician administration | Done | Runtime technicians are SQLite-backed and editable by admins. |
+| Dashboard navigation | Done | Main screen uses section navigation; admin users/technicians open in a separate window. |
 
 ## Stack
 

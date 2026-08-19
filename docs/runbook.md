@@ -323,6 +323,17 @@ Use this section as the running implementation log for the final report and proj
   memory sources.
 - Verified focused tests: `58 passed`.
 
+### 2026-08-19 - Dashboard Navigation And Admin Window
+
+- Added a top section bar for Nueva Solicitud, Cola de Ordenes, Recorrido
+  Guiado, Consola y Recomendacion, Tecnicos, Memoria, and Administracion.
+- Converted the main dashboard into one active operational view at a time to
+  reduce visual load.
+- Moved user administration and technician create/edit forms into a separate
+  admin window with Usuarios and Tecnicos tabs.
+- Kept technician edit actions on the field-service cards; selecting Editar
+  opens the admin window directly on the technician form.
+
 ## Next Technical Actions
 
 - Expand technician profile pages with contact fields and audit history.

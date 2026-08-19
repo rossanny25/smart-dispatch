@@ -56,13 +56,44 @@
       </div>
     </header>
 
+    <nav class="section-nav" aria-label="Secciones principales">
+      <button type="button" class="section-nav-btn active" data-view-target="request">
+        <i class="fa-solid fa-file-signature"></i>
+        <span>Nueva Solicitud</span>
+      </button>
+      <button type="button" class="section-nav-btn" data-view-target="orders">
+        <i class="fa-solid fa-list-check"></i>
+        <span>Cola de Órdenes</span>
+      </button>
+      <button type="button" class="section-nav-btn" data-view-target="guided">
+        <i class="fa-solid fa-compass"></i>
+        <span>Recorrido Guiado</span>
+      </button>
+      <button type="button" class="section-nav-btn" data-view-target="console">
+        <i class="fa-solid fa-rotate"></i>
+        <span>Consola y Recomendación</span>
+      </button>
+      <button type="button" class="section-nav-btn" data-view-target="technicians">
+        <i class="fa-solid fa-users"></i>
+        <span>Técnicos</span>
+      </button>
+      <button type="button" class="section-nav-btn" data-view-target="memory">
+        <i class="fa-solid fa-database"></i>
+        <span>Memoria</span>
+      </button>
+      <button type="button" class="section-nav-btn admin-nav-btn" id="btn-admin-open" hidden>
+        <i class="fa-solid fa-user-shield"></i>
+        <span>Administración</span>
+      </button>
+    </nav>
+
     <main class="app-content">
       
       <!-- Panel Izquierdo: Formularios y Trazas de Agentes -->
       <section class="panel-left">
         
         <!-- Crear Nueva Orden -->
-        <div class="card card-glow">
+        <div class="card card-glow app-view" data-view="request">
           <div class="card-header">
             <h2><i class="fa-solid fa-file-signature"></i> Nueva Solicitud de Servicio</h2>
           </div>
@@ -95,7 +126,7 @@
         </div>
 
         <!-- Demo guiada -->
-        <div class="card card-glass" id="guided-demo-card">
+        <div class="card card-glass app-view view-hidden" id="guided-demo-card" data-view="guided">
           <div class="card-header">
             <h2><i class="fa-solid fa-compass"></i> Recorrido Guiado</h2>
             <span class="badge badge-status-pendiente" id="guided-demo-state">Listo</span>
@@ -113,7 +144,7 @@
         </div>
 
         <!-- Administración de técnicos -->
-        <div class="card card-glass admin-card" id="admin-tech-card" hidden>
+        <div class="card card-glass admin-card admin-tab-panel" id="admin-tech-card" data-admin-tab-panel="technicians" hidden>
           <div class="card-header">
             <h2><i class="fa-solid fa-user-gear"></i> Administración de Técnicos</h2>
             <span class="badge badge-status-pendiente" id="admin-tech-state">Listo</span>
@@ -191,7 +222,7 @@
         </div>
 
         <!-- Administración de usuarios -->
-        <div class="card card-glass admin-card" id="admin-users-card" hidden>
+        <div class="card card-glass admin-card admin-tab-panel" id="admin-users-card" data-admin-tab-panel="users" hidden>
           <div class="card-header">
             <h2><i class="fa-solid fa-user-shield"></i> Administración de Usuarios</h2>
             <span class="badge badge-status-pendiente" id="admin-users-state">Cargando</span>
@@ -240,10 +271,10 @@
         </div>
 
         <!-- Trazabilidad del Ciclo de Agentes -->
-        <div class="card card-glass" id="agent-cycle-card" style="display: none;">
+        <div class="card card-glass app-view view-hidden" id="agent-cycle-card" data-view="console">
           <div class="card-header">
             <h2><i class="fa-solid fa-rotate"></i> Consola del Ciclo de Agentes (OODA)</h2>
-            <span class="active-badge animate-pulse" id="cycle-status-text">Procesando...</span>
+            <span class="badge badge-status-pendiente" id="cycle-status-text">En espera</span>
           </div>
           <div class="card-body">
             
@@ -257,7 +288,7 @@
                   <h3>1. Agente de Captura</h3>
                   <p class="step-summary">Estructurando lenguaje natural...</p>
                 </div>
-                <div class="step-status"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                <div class="step-status"></div>
               </div>
 
               <!-- 2. Analyze Agent -->
@@ -321,7 +352,7 @@
       <section class="panel-right">
         
         <!-- Tarjeta de Recomendación de Asignación -->
-        <div class="card card-glow" id="recommendation-card" style="display: none;">
+        <div class="card card-glow app-view view-hidden" id="recommendation-card" data-view="console" style="display: none;">
           <div class="card-header">
             <h2><i class="fa-solid fa-award"></i> Asignación Recomendada por IA</h2>
           </div>
@@ -379,7 +410,7 @@
         </div>
 
         <!-- Historial de Órdenes Pendientes -->
-        <div class="card card-glass">
+        <div class="card card-glass app-view view-hidden" data-view="orders">
           <div class="card-header">
             <h2><i class="fa-solid fa-list-check"></i> Cola de Órdenes de Trabajo</h2>
           </div>
@@ -391,7 +422,7 @@
         </div>
 
         <!-- Técnicos de Campo -->
-        <div class="card card-glass">
+        <div class="card card-glass app-view view-hidden" data-view="technicians">
           <div class="card-header">
             <h2><i class="fa-solid fa-users"></i> Técnicos de Servicio de Campo</h2>
           </div>
@@ -406,7 +437,7 @@
         </div>
 
         <!-- Memoria Semántica (Conocimiento Aprendido) -->
-        <div class="card card-glass">
+        <div class="card card-glass app-view view-hidden" data-view="memory">
           <div class="card-header">
             <h2><i class="fa-solid fa-database"></i> Memoria Persistente de Aprendizaje Semántico</h2>
           </div>
@@ -423,6 +454,32 @@
       </section>
 
     </main>
+  </div>
+
+  <!-- Ventana de Administración -->
+  <div id="admin-window" class="admin-window" hidden>
+    <div class="admin-window-panel card-glass" role="dialog" aria-modal="true" aria-labelledby="admin-window-title">
+      <div class="admin-window-header">
+        <div>
+          <h2 id="admin-window-title"><i class="fa-solid fa-user-shield"></i> Administración</h2>
+          <span>Gestión de usuarios, roles y técnicos de campo</span>
+        </div>
+        <button type="button" class="icon-btn" id="admin-window-close" title="Cerrar administración" aria-label="Cerrar administración">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="admin-window-tabs" role="tablist">
+        <button type="button" class="admin-tab-btn active" data-admin-tab="users">
+          <i class="fa-solid fa-users-gear"></i>
+          <span>Usuarios y roles</span>
+        </button>
+        <button type="button" class="admin-tab-btn" data-admin-tab="technicians">
+          <i class="fa-solid fa-user-gear"></i>
+          <span>Técnicos</span>
+        </button>
+      </div>
+      <div class="admin-window-body" id="admin-window-body"></div>
+    </div>
   </div>
 
   <!-- Modal de Finalización de Servicio -->
