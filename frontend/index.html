@@ -77,6 +77,10 @@
         <i class="fa-solid fa-users"></i>
         <span>Técnicos</span>
       </button>
+      <button type="button" class="section-nav-btn" data-view-target="map">
+        <i class="fa-solid fa-map-location-dot"></i>
+        <span>Mapa</span>
+      </button>
       <button type="button" class="section-nav-btn" data-view-target="calendar">
         <i class="fa-solid fa-calendar-days"></i>
         <span>Calendario</span>
@@ -211,6 +215,22 @@
                   <label for="admin-tech-gps-lng">GPS longitud</label>
                   <input type="number" id="admin-tech-gps-lng" min="-180" max="180" step="0.0001" required>
                 </div>
+                <div class="form-group">
+                  <label for="admin-tech-phone">Teléfono</label>
+                  <input type="text" id="admin-tech-phone" autocomplete="off" placeholder="+54 11 5555-0101">
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-email">Email</label>
+                  <input type="email" id="admin-tech-email" autocomplete="off" placeholder="tecnico@empresa.test">
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-documents">Documentos</label>
+                  <input type="text" id="admin-tech-documents" placeholder="Matrícula, Seguro ART, Licencia">
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-audit">Auditoría</label>
+                  <input type="text" id="admin-tech-audit" placeholder="Nota interna opcional">
+                </div>
               </div>
               <div class="admin-actions">
                 <button type="submit" class="btn btn-primary" id="admin-save-tech">
@@ -281,6 +301,25 @@
             <span class="badge badge-status-pendiente" id="cycle-status-text">En espera</span>
           </div>
           <div class="card-body">
+            <div class="canonical-flow-panel" id="canonical-flow-panel" aria-label="Estados canónicos del flujo">
+              <div class="canonical-flow-header">
+                <span>Estado canónico</span>
+                <div class="canonical-flow-status">
+                  <span class="analyze-adapter-badge local" id="analyze-adapter-badge">
+                    <i class="fa-solid fa-microchip"></i> ANALYZE: Local determinístico
+                  </span>
+                  <strong id="canonical-current-state">IDLE</strong>
+                </div>
+              </div>
+              <div class="canonical-state-grid">
+                <span class="canonical-state-chip" data-canonical-state="CAPTURE">CAPTURE</span>
+                <span class="canonical-state-chip" data-canonical-state="ANALYZE">ANALYZE</span>
+                <span class="canonical-state-chip" data-canonical-state="PLAN">PLAN</span>
+                <span class="canonical-state-chip" data-canonical-state="EVALUATE">EVALUATE</span>
+                <span class="canonical-state-chip" data-canonical-state="WAIT_FOR_DECISION">WAIT_FOR_DECISION</span>
+                <span class="canonical-state-chip" data-canonical-state="NO_FEASIBLE_CANDIDATES">NO_FEASIBLE_CANDIDATES</span>
+              </div>
+            </div>
             
             <!-- Timeline de Agentes -->
             <div class="agent-timeline">
@@ -440,6 +479,36 @@
           </div>
         </div>
 
+        <!-- Mapa operativo sin proveedor externo -->
+        <div class="card card-glass app-view view-hidden" data-view="map">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-map-location-dot"></i> Mapa Operativo</h2>
+            <span class="badge badge-status-completada">Local</span>
+          </div>
+          <div class="card-body">
+            <div class="map-toolbar">
+              <div class="map-summary" id="map-summary">Cargando distribución operativa...</div>
+              <div class="map-legend" aria-label="Referencias del mapa">
+                <span><i class="fa-solid fa-user-gear"></i> Técnico</span>
+                <span><i class="fa-solid fa-triangle-exclamation"></i> Orden pendiente</span>
+              </div>
+            </div>
+            <div class="ops-map" id="ops-map" aria-label="Mapa esquemático de zonas de servicio">
+              <div class="map-grid-line map-grid-line-v"></div>
+              <div class="map-grid-line map-grid-line-h"></div>
+              <div class="map-zone-label" style="left: 16%; top: 17%;">Palermo</div>
+              <div class="map-zone-label" style="left: 53%; top: 18%;">Belgrano</div>
+              <div class="map-zone-label" style="left: 68%; top: 47%;">Centro</div>
+              <div class="map-zone-label" style="left: 32%; top: 54%;">Almagro</div>
+              <div class="map-zone-label" style="left: 43%; top: 78%;">Caballito</div>
+              <div id="map-markers" class="map-markers"></div>
+            </div>
+            <div id="map-zone-list" class="map-zone-list">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+        </div>
+
         <!-- Calendario de visitas -->
         <div class="card card-glass app-view view-hidden" data-view="calendar">
           <div class="card-header">
@@ -458,6 +527,42 @@
                 Sin visitas registradas todavía.
               </div>
             </div>
+            <div id="calendar-technician-board" class="calendar-technician-board" aria-label="Resumen de visitas por técnico">
+              <!-- Cargado dinámicamente -->
+            </div>
+            <form id="visit-form" class="visit-form">
+              <div class="form-group">
+                <label for="visit-tech-select">Técnico</label>
+                <select id="visit-tech-select" required></select>
+              </div>
+              <div class="form-group">
+                <label for="visit-client">Cliente</label>
+                <input type="text" id="visit-client" placeholder="Cliente / Sucursal" required>
+              </div>
+              <div class="form-group">
+                <label for="visit-address">Dirección</label>
+                <input type="text" id="visit-address" placeholder="Dirección operativa" required>
+              </div>
+              <div class="form-group">
+                <label for="visit-zone">Zona</label>
+                <select id="visit-zone" required>
+                  <option value="Palermo">Palermo</option>
+                  <option value="Centro">Centro</option>
+                  <option value="Belgrano">Belgrano</option>
+                  <option value="Almagro">Almagro</option>
+                  <option value="Caballito">Caballito</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="visit-start">Inicio</label>
+                <input type="datetime-local" id="visit-start" required>
+              </div>
+              <div class="form-group">
+                <label for="visit-duration">Duración min</label>
+                <input type="number" id="visit-duration" min="15" max="1440" step="15" value="90" required>
+              </div>
+              <button type="submit" class="btn btn-primary"><i class="fa-solid fa-calendar-plus"></i> Programar visita</button>
+            </form>
             <div id="calendar-list" class="calendar-list">
               <!-- Cargado dinámicamente -->
             </div>

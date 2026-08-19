@@ -42,7 +42,7 @@ cold start before judging the deployment.
 | GitHub repository | Done | Remote is `git@github.com:rossanny25/smart-dispatch.git`. |
 | Docker | Done | Compose exposes the app on host port `8050`. |
 | Final report Markdown | Done | Self-contained source at `docs/final-report-ready.md`. |
-| Final report PDF | Done | Includes screenshots, 12 pages, under `docs/`. |
+| Final report PDF | Done | Regenerated from current evidence under `docs/`. |
 | Architecture diagram | Done | Included in Markdown and supporting docs. |
 | UML | Done | Included in Markdown and supporting docs. |
 | Technology table | Done | Included in final report. |
@@ -160,16 +160,19 @@ Important directories:
 ## Data Loading
 
 The project has SQLite-backed users, basic role administration, editable
-service technicians, and completed service visits. Technician records are
-bootstrapped once from:
+service technicians, operational service orders, and service visits. Technician
+records are bootstrapped once from:
 
 - `data/seeds/technicians.json`
 
 After startup, runtime technician edits are stored in SQLite and used by
-dispatch simulation immediately. Completed dispatches create `service_visits`
-records in SQLite for the Calendario view. Demo work orders still load from:
+dispatch simulation immediately. Demo service orders are bootstrapped into
+SQLite from:
 
 - `data/seeds/orders.json`
+
+Completed dispatches and manually scheduled visits create `service_visits`
+records in SQLite for the Calendario view.
 
 The legacy learning memory starts from:
 
@@ -193,7 +196,7 @@ Recent checks performed during final delivery:
 - Docker demo ran on `http://127.0.0.1:8050`.
 - Render `/healthz` returned `{"status":"ok"}`.
 - Browser screenshots were captured from a real session.
-- Final PDF was generated with 12 pages and 4 embedded screenshots.
+- Final PDF was regenerated with the current frontend evidence set.
 - Repository/documentation checks passed:
 
 ```text
@@ -285,21 +288,21 @@ measures just below its `0.4s` threshold on this machine.
 
 ## Known Limits
 
-- No full technician profile editor yet.
-- No visit calendar or map view yet.
+- Technician profiles are operational but still compact; document uploads are represented as metadata only.
+- Visit calendar and map view are local operational views without external provider integration.
 - No public self-registration or password email delivery.
 - Runtime persistence on free hosting can be ephemeral.
 - Admin user writes currently use a compact auth-store helper instead of the
   main dispatch unit-of-work abstraction.
 - Admin endpoints return pragmatic JSON bodies; the deeper canonical command
   envelope can be added when the frontend migrates more `/api/v1` workflows.
-- Work orders still use compatibility route storage; technicians no longer use
-  JSON as their runtime source of truth.
+- Service orders, technicians, and visits use SQLite-backed operational storage;
+  the browser still reaches them through compatibility routes.
 - The frontend still uses some legacy compatibility routes, now with richer evidence for the guided demo.
 - The canonical `/api/v1` backend is stronger than the current UI presentation.
-- No real GPS, traffic, weather, or LLM integration is connected.
-- Ollama/SLM integration is documented as a possible future extension, not a
-  required working feature.
+- No real GPS or traffic/weather provider integration is connected.
+- Ollama is available only as an optional local `ANALYZE` proposal adapter; it
+  is off by default and not configured for Render.
 
 Do not treat these as accidental omissions. They are documented MVP boundaries.
 
@@ -307,16 +310,12 @@ Do not treat these as accidental omissions. They are documented MVP boundaries.
 
 Only do these if the user asks for more after the final delivery:
 
-1. Expand technician profiles with contact fields, documents, and audit history.
-2. Expand the calendar into manual scheduling and visit status changes.
-3. Add no-cost map visualization for visits and zones.
-4. Migrate demo work orders and dispatch execution fully into SQLite-backed operational records.
-5. Add a dedicated seeded `NO_FEASIBLE_CANDIDATES` order so the no-forced-recommendation state is easy to demo.
-6. Surface canonical `DispatchRun` state transitions from `/api/v1` in the frontend.
-7. Implement human decision and outcome commands on the canonical `/api/v1` flow.
-8. Complete episodic memory and semantic promotion with memory on/off comparison scenarios.
-9. Improve accessibility with visible focus, semantic labels, keyboard navigation, and readable errors.
-10. Add optional Ollama adapter for the `ANALYZE` stage.
+1. Connect visible canonical state chips to persisted `DispatchRun` transitions and revision from `/api/v1`.
+2. Implement human decision and outcome commands on the canonical `/api/v1` flow.
+3. Move admin writes into the main Unit of Work and canonical command envelope.
+4. Complete episodic memory and semantic promotion with memory on/off comparison scenarios.
+5. Improve accessibility with visible focus, semantic labels, keyboard navigation, and readable errors.
+6. Expand authentication only if the project moves beyond single-user demo use.
 
 ## Agent Rules
 

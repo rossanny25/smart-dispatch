@@ -513,6 +513,7 @@ def create_user(
     display_name: str,
     role: str,
     password: str,
+    is_active: bool = True,
     database_path: str | os.PathLike[str] | None = None,
 ) -> UserAccount:
     normalized_username = _validate_username(username)
@@ -529,7 +530,7 @@ def create_user(
                     id, username, display_name, role, password_hash, is_active,
                     created_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, 1, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     user_id,
@@ -537,6 +538,7 @@ def create_user(
                     normalized_name,
                     normalized_role,
                     hash_password(password),
+                    1 if is_active else 0,
                     now,
                     now,
                 ),

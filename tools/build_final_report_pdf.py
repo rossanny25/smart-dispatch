@@ -195,6 +195,7 @@ def architecture_ascii():
   -> FastAPI HTTP Adapter (/api/v1 y /api)
   -> Application Commands
   -> DispatchOrchestrator
+  -> Analyze Adapter (deterministico u Ollama local opcional)
   -> Domain Policies (eligibility, scoring, confidence)
   -> Unit Of Work / SQLite Repositories
   -> SQLite (runs, snapshots, stages, transitions)"""
@@ -232,6 +233,7 @@ def build_story(styles):
                 ["Demo Docker local", "http://127.0.0.1:8050"],
                 ["Acceso demo", "Usuario admin / clave smart2026AI"],
                 ["Guia de ejecucion", "docs/runbook.md"],
+                ["Guia Ollama local opcional", "docs/ollama-local-demo.md"],
                 ["Evidencia de sesion", "docs/usage-session-log.md"],
             ],
             [1.8 * inch, 4.6 * inch],
@@ -417,7 +419,7 @@ def build_story(styles):
     )
     story.append(
         p(
-            "El sistema incluye usuarios persistidos en SQLite, roles basicos y login con cookie de sesion firmada. Existen paneles admin para listar, crear y editar usuarios y tecnicos. Los tecnicos operativos se inicializan desde seeds solo cuando la tabla esta vacia; luego se editan en SQLite y afectan la siguiente simulacion de despacho.",
+            "El sistema incluye usuarios persistidos en SQLite, roles basicos y login con cookie de sesion firmada. Existen paneles admin para listar, crear y editar usuarios y tecnicos. Los tecnicos operativos se inicializan desde seeds solo cuando la tabla esta vacia; luego se editan en SQLite y afectan la siguiente simulacion de despacho. Las fichas operativas incluyen contacto, documentos y notas de auditoria. Las ordenes demo tambien se inicializan en SQLite desde seeds, y los cierres de despacho crean visitas visibles en el Calendario y en el Mapa Operativo local.",
             styles,
         )
     )
@@ -426,9 +428,13 @@ def build_story(styles):
     story.append(h1("9. Capturas del frontend", styles))
     screenshots = [
         ("01-dashboard-full.png", "Figura 1. Dashboard inicial con ordenes, tecnicos y controles de contexto."),
-        ("02-dispatch-result.png", "Figura 2. Resultado de simulacion con ciclo agentico y recomendacion."),
+        ("02-dispatch-result.png", "Figura 2. Resultado de simulacion con ciclo agentico, estados canonicos, reglas duras y recomendacion."),
         ("03-recommendation-approved.png", "Figura 3. Aprobacion de recomendacion y modal de cierre."),
         ("04-learning-completed.png", "Figura 4. Orden completada y aprendizaje registrado."),
+        ("05-map-operative.png", "Figura 5. Mapa operativo local con ordenes y tecnicos por zona."),
+        ("06-calendar-visits.png", "Figura 6. Calendario de visitas agrupado por tecnico y estado."),
+        ("07-admin-technicians.png", "Figura 7. Administracion de tecnicos con contacto, documentos y auditoria."),
+        ("08-no-feasible-candidates.png", "Figura 8. Escenario NO_FEASIBLE_CANDIDATES sin recomendacion forzada."),
     ]
     for filename, caption in screenshots:
         story.append(image(EVIDENCE / filename, 6.5 * inch, 6.4 * inch, styles, caption))
@@ -439,11 +445,11 @@ def build_story(styles):
         table(
             [
                 ["Campo", "Valor"],
-                ["Fecha", "2026-08-11"],
+                ["Fecha", "2026-08-19"],
                 ["Runtime", "Docker Compose"],
                 ["URL", "http://127.0.0.1:8050"],
                 ["Comando", "docker compose up --build"],
-                ["Objetivo", "Demostrar que la aplicacion existe, corre y sirve frontend/API."],
+                ["Objetivo", "Demostrar la version actual con estados canonicos, calendario, mapa, admin operativo y escenario no factible."],
             ],
             [1.6 * inch, 4.8 * inch],
         )
@@ -456,6 +462,8 @@ def build_story(styles):
                 "Se ejecuto una simulacion de despacho.",
                 "Se aprobo la recomendacion.",
                 "Se completo el servicio y se registro aprendizaje.",
+                "Se revisaron Mapa Operativo, Calendario y Administracion de tecnicos.",
+                "Se ejecuto el escenario NO_FEASIBLE_CANDIDATES.",
                 "Se exportaron logs Docker/Uvicorn.",
             ],
             styles,
@@ -463,7 +471,7 @@ def build_story(styles):
     )
     story.append(
         p(
-            "Resultado observado: orden Cafeteria Martinez Belgrano, categoria Electricidad, prioridad 4, tecnico recomendado Juan Perez, score visible 98, viaje 8 minutos, duracion estimada 90 minutos y estado final completada.",
+            "Resultado observado: orden Cafeteria Martinez Belgrano, categoria Electricidad, prioridad 4, tecnico recomendado Juan Perez, score visible 98, viaje 8 minutos, duracion estimada 90 minutos y estado final completada. Tambien se observo NO_FEASIBLE_CANDIDATES para la orden Data Center Puerto Madero, sin forzar recomendacion.",
             styles,
         )
     )
@@ -474,13 +482,13 @@ def build_story(styles):
         table(
             [
                 ["Heuristica", "Evaluacion", "Mejora"],
-                ["Visibilidad del estado", "Buena: etapas y recomendacion visibles.", "Mostrar estado canonico DispatchRun."],
-                ["Relacion con el mundo real", "Buena: orden, tecnico, zona y prioridad.", "Etiquetar SLA, reglas duras y confianza."],
-                ["Control del usuario", "Media: permite aprobar/cambiar.", "Agregar decision canonica completa."],
+                ["Visibilidad del estado", "Buena: etapas, recomendacion y estados canonicos visibles.", "Conectar revision/transiciones reales de DispatchRun."],
+                ["Relacion con el mundo real", "Buena: orden, tecnico, zona, prioridad, mapa y visitas.", "Mantener labels compactos para SLA, reglas y confianza."],
+                ["Control del usuario", "Buena para MVP: aprobar/cambiar, resetear y administrar datos.", "Agregar decision canonica completa."],
                 ["Consistencia", "Buena: paneles y estados uniformes.", "Unificar errores API en frontend."],
                 ["Prevencion de errores", "Media: backend valida mas que UI.", "Validar antes de enviar."],
                 ["Reconocimiento", "Buena: ordenes y tecnicos visibles.", "Mantener contexto seleccionado."],
-                ["Recuperacion de errores", "Media: API tiene errores tipados.", "Mostrar retry y explicacion no factible."],
+                ["Recuperacion de errores", "Media: API tipada y no factible visible.", "Mejorar validacion de formularios y retry."],
                 ["Ayuda/documentacion", "Buena: README, runbook e informe.", "Agregar panel breve dentro de la app."],
             ],
             [1.65 * inch, 2.35 * inch, 2.4 * inch],
@@ -530,7 +538,19 @@ def build_story(styles):
     story.append(h1("14. Reflexion sobre integracion de LLM o SLM local", styles))
     story.append(
         p(
-            "La integracion mas razonable de un LLM o SLM local seria como adaptador opcional de ANALYZE. Su funcion seria leer texto libre del incidente y proponer campos estructurados: categoria, prioridad, certificaciones, SLA y duracion estimada.",
+            "La integracion local de un LLM o SLM se implementa como adaptador opcional de ANALYZE, apagado por defecto. Su funcion es leer texto libre del incidente y proponer campos estructurados: categoria, prioridad, certificaciones, SLA y duracion estimada.",
+            styles,
+        )
+    )
+    story.append(
+        p(
+            "Ollama puede activarse solo en entorno local con SMART_DISPATCH_ANALYZE_ADAPTER=ollama. El despliegue Render no configura Ollama y conserva el adaptador deterministico. Si Ollama no esta disponible, demora demasiado o devuelve JSON invalido, la aplicacion vuelve al analizador deterministico.",
+            styles,
+        )
+    )
+    story.append(
+        p(
+            "La guia operativa del demo local esta documentada en docs/ollama-local-demo.md e incluye los comandos para host local, Docker Compose con servicio Ollama y Docker apuntando al Ollama del host.",
             styles,
         )
     )
@@ -557,21 +577,20 @@ def build_story(styles):
     story.append(
         bullet(
             [
-                "No hay fichas completas de tecnicos con documentos, contacto y auditoria, aunque ya existe administracion operativa basica con turnos y certificaciones.",
-                "No hay calendario de visitas ni mapa operativo.",
                 "No hay registro publico de usuarios ni recuperacion de clave por email.",
-                "Las ordenes demo siguen usando rutas de compatibilidad; los tecnicos ya usan SQLite como fuente runtime.",
+                "Las rutas visibles de la UI todavia combinan /api/v1 con rutas de compatibilidad mientras se migra la decision humana canonica.",
                 "La UI legacy todavia muestra algunas trazas descriptivas.",
                 "No se implementa aprendizaje semantico completo de produccion.",
                 "No se garantiza persistencia productiva en hosting gratuito.",
-                "No se implementan integraciones reales con GPS, clima o trafico.",
+                "El mapa es operativo/esquematico local; no usa proveedor GIS externo.",
+                "Clima, trafico y GPS son factores simulados, no integraciones reales.",
             ],
             styles,
         )
     )
     story.append(
         p(
-            "Roadmap recomendado: demo guiada dentro de la interfaz; reglas duras visibles por tecnico antes del score; score objetivo y confianza separados; escenario NO_FEASIBLE_CANDIDATES sin recomendacion forzada; estados canonicos DispatchRun visibles en frontend; decision humana y outcome sobre /api/v1; memoria episodica con comparativas memoria on/off; accesibilidad WCAG; Ollama como adaptador local opcional; autenticacion solo si evoluciona a uso multiusuario.",
+            "Roadmap recomendado: decision humana y outcome completo sobre /api/v1; conexion de estados visibles con DispatchRun real y revision persistida; escrituras admin dentro del Unit of Work principal; memoria episodica con comparativas memoria on/off; accesibilidad WCAG; autenticacion ampliada solo si evoluciona a uso multiusuario.",
             styles,
         )
     )

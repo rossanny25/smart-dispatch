@@ -11,7 +11,8 @@ Docker, Render y documentacion tecnica de producto.
 - [x] Crear e inicializar la estructura básica del repositorio de especificaciones.
 - [x] Redactar los 14 archivos de especificaciones funcionales en `spec/`.
 - [x] Desarrollar y validar los prompts para los 5 agentes en `prompts/`.
-- [x] Crear el archivo de contexto general `docs/CONTEXT.md`.
+- [x] Crear el contexto inicial historico; fue movido a `local-docs/CONTEXT.md`
+      y queda ignorado porque describe una version anterior.
 
 ## Fase 2: Aplicacion Real Y Demo Ejecutable (Completado)
 
@@ -77,15 +78,16 @@ Docker, Render y documentacion tecnica de producto.
 - [x] Agregar horarios y disponibilidad editable por tecnico.
 - [x] Mostrar criterios de seleccion, reglas duras y efecto de memoria en UI.
 - [x] Rechazar solicitudes de servicio con texto no entendible.
-- [ ] Crear fichas completas de tecnicos con contacto/documentos/auditoria.
-- [ ] Agregar calendario de visitas por tecnico.
-- [ ] Agregar vista de mapa sin dependencia paga.
-- [ ] Migrar ordenes demo desde JSON bootstrap a datos operativos SQLite.
+- [x] Crear fichas completas de tecnicos con contacto/documentos/auditoria.
+- [x] Agregar calendario de visitas por tecnico.
+- [x] Agregar vista de mapa sin dependencia paga.
+- [x] Migrar ordenes demo desde JSON bootstrap a datos operativos SQLite.
 - [ ] Mostrar `DispatchRun` canonico de `/api/v1` en el frontend.
 - [ ] Implementar decision humana y outcome completo sobre API canonica.
 - [ ] Mover endpoints admin al sobre canonico completo de `/api/v1`.
 - [ ] Integrar escrituras admin al Unit of Work principal.
-- [ ] Agregar escenario explicito de `NO_FEASIBLE_CANDIDATES`.
-- [ ] Mostrar estados canonicos `CAPTURE`, `ANALYZE`, `PLAN`, `EVALUATE` y `WAIT_FOR_DECISION`.
-- [ ] Evaluar Ollama como adaptador local opcional de `ANALYZE`.
+- [x] Agregar escenario explicito de `NO_FEASIBLE_CANDIDATES`.
+- [x] Mostrar estados canonicos `CAPTURE`, `ANALYZE`, `PLAN`, `EVALUATE` y `WAIT_FOR_DECISION`.
+- [x] Actualizar documentacion y capturas con mapa, calendario, admin operativo y escenario no factible.
+- [x] Agregar Ollama como adaptador local opcional de `ANALYZE`, apagado por defecto y fuera de Render.
 - [ ] Expandir autenticacion solo si el proyecto deja de ser single-user.

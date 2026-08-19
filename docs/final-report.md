@@ -8,6 +8,7 @@
 | Repositorio GitHub | https://github.com/rossanny25/smart-dispatch |
 | Demo Docker local | http://127.0.0.1:8050 |
 | Guia de ejecucion | docs/runbook.md |
+| Guia Ollama local opcional | docs/ollama-local-demo.md |
 | Evidencia de sesion | docs/usage-session-log.md |
 
 Nota de hosting: la aplicacion publicada usa Render Free. Si la instancia estuvo inactiva, la primera carga puede demorar aproximadamente 50 segundos o mas mientras el servicio despierta.
@@ -41,7 +42,8 @@ Objetivos concretos:
 - Documentar arquitectura, UML, tecnologias y decisiones.
 - Evaluar UX/UI con heuristicas de Nielsen.
 - Identificar riesgos de ciberseguridad y mitigaciones.
-- Reflexionar sobre como integrar un LLM o SLM local.
+- Integrar de forma opcional local un LLM o SLM para apoyar `ANALYZE` sin
+  reemplazar reglas deterministicas.
 
 ## 4. Evolucion Desde El Trabajo De Medio Ciclo
 
@@ -89,6 +91,7 @@ El sistema modela el ciclo de despacho como una secuencia de estados:
 
 ```text
 CAPTURE -> ANALYZE -> PLAN -> EVALUATE -> WAIT_FOR_DECISION
+                              -> NO_FEASIBLE_CANDIDATES
 ```
 
 Cada etapa cumple una responsabilidad:
@@ -137,8 +140,10 @@ El sistema utiliza datos semilla reproducibles, persistencia SQLite, usuarios
 persistidos y login con roles basicos para proteger la UI y las rutas API.
 Incluye paneles admin para listar, crear y editar usuarios y tecnicos. Los
 tecnicos operativos se inicializan desde seeds y luego se editan en SQLite,
-afectando la siguiente simulacion. Las fichas completas con documentos,
-calendarios y mapas quedan como evolucion operativa.
+afectando la siguiente simulacion. Las fichas operativas incluyen contacto,
+documentos y notas de auditoria. Las ordenes demo tambien se persisten en
+SQLite desde seeds, y los cierres de despacho alimentan visitas visibles en el
+Calendario y en el Mapa Operativo local.
 
 Estrategia de datos:
 
@@ -187,7 +192,8 @@ La aplicacion publicada permite:
 6. Revisar la recomendacion generada.
 7. Aprobar o cambiar el tecnico recomendado.
 8. Registrar cierre de servicio y retroalimentacion.
-9. Consultar memoria persistente legacy.
+9. Consultar calendario de visitas, mapa operativo y memoria persistente legacy.
+10. Administrar usuarios, roles y fichas de tecnicos desde la ventana admin.
 
 URL publica:
 
@@ -219,6 +225,10 @@ Evidencias capturadas:
 | Resultado de simulacion | `docs/evidence/02-dispatch-result.png` |
 | Aprobacion de recomendacion | `docs/evidence/03-recommendation-approved.png` |
 | Orden completada | `docs/evidence/04-learning-completed.png` |
+| Mapa operativo | `docs/evidence/05-map-operative.png` |
+| Calendario de visitas | `docs/evidence/06-calendar-visits.png` |
+| Administracion de tecnicos | `docs/evidence/07-admin-technicians.png` |
+| Escenario sin candidatos factibles | `docs/evidence/08-no-feasible-candidates.png` |
 | API tecnicos | `docs/evidence/api-technicians.json` |
 | API ordenes despues de sesion | `docs/evidence/api-orders-after-session.json` |
 | Logs Docker/Uvicorn | `docs/evidence/docker-session.log` |
@@ -233,6 +243,8 @@ Resultado observado:
 - Tiempo de viaje visible: 8 minutos.
 - Duracion estimada visible: 90 minutos.
 - Estado final de la orden: completada.
+- Estado canonico visible: `WAIT_FOR_DECISION` para recomendacion y
+  `NO_FEASIBLE_CANDIDATES` para la orden de media tension sin tecnico apto.
 
 ## 12. UX/UI: Autoevaluacion Nielsen
 
@@ -242,23 +254,22 @@ Resumen:
 
 | Heuristica | Evaluacion |
 | --- | --- |
-| Visibilidad del estado | Buena: se muestran etapas del ciclo y recomendacion. |
+| Visibilidad del estado | Buena: se muestran etapas, recomendacion y estados canonicos del flujo. |
 | Relacion con el mundo real | Buena: usa conceptos de despachador, tecnico, orden, zona y prioridad. |
-| Control del usuario | Media: permite aprobar/cambiar, pero falta flujo canonico completo. |
+| Control del usuario | Buena para el MVP: permite aprobar/cambiar, resetear demo y administrar datos operativos. |
 | Consistencia | Buena: paneles y estados tienen estilo uniforme. |
 | Prevencion de errores | Media: backend valida mas que la UI. |
 | Reconocimiento antes que memoria | Buena: ordenes y tecnicos estan visibles. |
-| Flexibilidad | Media: faltan botones directos para escenarios operativos. |
+| Flexibilidad | Buena para demo: incluye recorrido guiado, mapa, calendario y escenario no factible. |
 | Diseno minimalista | Medio: visualmente claro, aunque algunas trazas ocupan mucho espacio. |
 | Recuperacion de errores | Media: la API tiene errores tipados, la UI debe mostrarlos mejor. |
 | Ayuda/documentacion | Buena: README, runbook y docs de entrega. |
 
 Mejoras futuras:
 
-- Mostrar estado canonico `DispatchRun` en frontend.
-- Mostrar reglas duras antes del puntaje.
 - Separar visualmente score objetivo y confianza.
-- Agregar pantalla explicita de `NO_FEASIBLE_CANDIDATES`.
+- Conectar decision humana y outcome completo al flujo canonico `/api/v1`.
+- Mejorar mensajes de validacion de formularios antes de enviar al backend.
 - Mejorar accesibilidad por teclado y etiquetas semanticas.
 
 ## 13. Log De Ciberseguridad
@@ -302,7 +313,9 @@ Errores o limites observados:
 
 ## 15. Reflexion Sobre Integracion De LLM O SLM Local
 
-La integracion mas razonable de un LLM o SLM local seria como adaptador opcional de ANALYZE. Su funcion seria leer texto libre del incidente y proponer campos estructurados: categoria, prioridad, certificaciones, SLA y duracion estimada.
+La integracion local de un LLM o SLM se implementa como adaptador opcional de ANALYZE, apagado por defecto. Su funcion es leer texto libre del incidente y proponer campos estructurados: categoria, prioridad, certificaciones, SLA y duracion estimada.
+
+En la implementacion actual, Ollama puede activarse solo en entorno local con `SMART_DISPATCH_ANALYZE_ADAPTER=ollama`. El despliegue Render no configura Ollama y conserva el adaptador deterministico. Si Ollama no esta disponible, demora demasiado o devuelve JSON invalido, la aplicacion vuelve al analizador deterministico. La guia operativa del demo local esta documentada en `docs/ollama-local-demo.md`.
 
 El modelo no deberia:
 
@@ -359,16 +372,14 @@ Esto no invalida la publicacion del MVP, porque el proyecto conserva seeds repro
 
 Limitaciones intencionales:
 
-- No hay fichas completas de tecnicos con documentos, contacto y auditoria,
-  aunque ya existe administracion operativa basica con turnos y certificaciones.
-- No hay calendario de visitas ni mapa operativo.
 - No hay registro publico de usuarios ni recuperacion de clave por email.
-- Las ordenes demo siguen usando rutas de compatibilidad; los tecnicos ya usan
-  SQLite como fuente runtime.
+- Las rutas visibles de la UI todavia combinan `/api/v1` con rutas de
+  compatibilidad mientras se migra la decision humana canonica.
 - La UI legacy todavia muestra algunas trazas descriptivas.
 - No se implementa aprendizaje semantico completo de produccion.
 - No se garantiza persistencia productiva en hosting gratuito.
-- No se implementan integraciones reales con GPS, clima o trafico.
+- El mapa es operativo/esquematico local; no usa proveedor GIS externo.
+- Clima, trafico y GPS son factores simulados, no integraciones reales.
 
 Estas limitaciones son coherentes con el objetivo: demostrar orquestacion, memoria persistente, explicabilidad y publicacion de un prototipo funcional.
 
@@ -376,16 +387,12 @@ Estas limitaciones son coherentes con el objetivo: demostrar orquestacion, memor
 
 Prioridades futuras:
 
-1. Agregar una demo guiada dentro de la interfaz: reset de escenario, seleccion de orden, despacho, aprobacion y cierre de servicio en un recorrido visible.
-2. Mostrar reglas duras por tecnico antes del score: disponibilidad, certificaciones, turno, carga maxima, limite de conduccion y EPP requerido.
-3. Separar visualmente score objetivo y confianza de recomendacion para evitar que el usuario confunda calidad de asignacion con calidad de evidencia.
-4. Agregar un escenario `NO_FEASIBLE_CANDIDATES` donde ningun tecnico cumpla las restricciones, mostrando razones de descarte sin forzar recomendacion.
-5. Mostrar en frontend los `DispatchRun` canonicos de `/api/v1`, incluyendo estados `CAPTURE`, `ANALYZE`, `PLAN`, `EVALUATE` y `WAIT_FOR_DECISION`.
-6. Implementar decision humana y outcome completo sobre la API canonica para reemplazar gradualmente las rutas legacy de la UI.
-7. Completar memoria episodica y promocion semantica con escenarios comparativos memoria on/off.
-8. Mejorar accesibilidad WCAG: foco visible, labels semanticos, navegacion por teclado y mensajes de error legibles.
-9. Evaluar Ollama como adaptador local opcional de `ANALYZE`, manteniendo validacion Pydantic y reglas deterministicas.
-10. Expandir autenticacion solo si el sistema evoluciona a uso multiusuario.
+1. Implementar decision humana y outcome completo sobre la API canonica para reemplazar gradualmente las rutas legacy de la UI.
+2. Conectar el panel de estados visibles con `DispatchRun` real de `/api/v1`, incluyendo revision y transiciones persistidas.
+3. Integrar escrituras admin al Unit of Work principal y al sobre canonico de comandos.
+4. Completar memoria episodica y promocion semantica con escenarios comparativos memoria on/off.
+5. Mejorar accesibilidad WCAG: foco visible, labels semanticos, navegacion por teclado y mensajes de error legibles.
+6. Expandir autenticacion solo si el sistema evoluciona a uso multiusuario.
 
 ## 19. Conclusiones
 

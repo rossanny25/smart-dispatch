@@ -66,6 +66,7 @@ def test_admin_can_list_create_and_edit_users(tmp_path: Path) -> None:
             "display_name": "Tecnico Norte",
             "role": "tecnico",
             "password": "tecnico2026",
+            "is_active": True,
         },
         headers=_admin_headers(admin_cookie, "create-tecnico-norte"),
         authenticated=False,
@@ -75,8 +76,29 @@ def test_admin_can_list_create_and_edit_users(tmp_path: Path) -> None:
     created = json.loads(create_body)["user"]
     assert created["username"] == "tecnico-norte"
     assert created["role"] == "tecnico"
+    assert created["is_active"] is True
     assert "password" not in created
     assert "password_hash" not in created
+
+    create_inactive_status, _, create_inactive_body = request_asgi(
+        app,
+        "/api/v1/admin/users",
+        method="POST",
+        json_body={
+            "username": "tecnico-fiscal",
+            "display_name": "Tecnico Fiscal",
+            "role": "tecnico",
+            "password": "tecnico2026",
+            "is_active": False,
+        },
+        headers=_admin_headers(admin_cookie, "create-tecnico-fiscal"),
+        authenticated=False,
+    )
+
+    assert create_inactive_status == 201
+    inactive = json.loads(create_inactive_body)["user"]
+    assert inactive["username"] == "tecnico-fiscal"
+    assert inactive["is_active"] is False
 
     update_status, _, update_body = request_asgi(
         app,
@@ -107,7 +129,11 @@ def test_admin_can_list_create_and_edit_users(tmp_path: Path) -> None:
 
     assert list_status == 200
     users = json.loads(list_body)["users"]
-    assert [user["username"] for user in users] == ["admin", "tecnico-norte"]
+    assert [user["username"] for user in users] == [
+        "admin",
+        "tecnico-fiscal",
+        "tecnico-norte",
+    ]
 
 
 def test_admin_create_user_replays_same_idempotency_key(tmp_path: Path) -> None:

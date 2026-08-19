@@ -14,8 +14,6 @@
 - [Architecture](./architecture.md)
 - [API Contracts](./api-contracts.md)
 - [Data Models](./data-models.md)
-- [Component Inventory](./component-inventory.md)
-- [Source Tree Analysis](./source-tree-analysis.md)
 - [Development Guide](./development-guide.md)
 - [Runbook](./runbook.md)
 - [Final Delivery Guide](./final-delivery-guide.md)
@@ -29,11 +27,10 @@
 - [AI Co-Work Log](./ai-cowork-log.md)
 - [Repository And Data Strategy](./repository-and-data-strategy.md)
 - [Deployment Options](./deployment-options.md)
+- [Ollama Local Analyze Demo](./ollama-local-demo.md)
 
 ## Existing Product Documentation
 
-- [Project Context](./CONTEXT.md)
-- [Professor Feedback Plan](./PLAN_FEEDBACK_PROFESOR.md)
 - [Backlog](./TASKS.md)
 - [Existing Specification Overview](../spec/00_project_overview.md)
 - [Business Rules](../spec/02_business_rules.md)
@@ -43,4 +40,7 @@
 
 ## Getting Started
 
-Read the project overview and architecture first. For product planning, use this index together with the professor feedback and the consolidated PRD under `_bmad-output/planning-artifacts/prds/`.
+Read the project overview, architecture, runbook, and current project status first.
+Historical generated scans were moved to the root `local-docs/` folder and are
+ignored by git so `docs/` stays focused on deliverables, operations, and
+evaluation evidence.

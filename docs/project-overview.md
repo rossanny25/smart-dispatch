@@ -63,6 +63,6 @@ The current implementation demonstrates the intended experience, but it does not
 - [Architecture](./architecture.md)
 - [API Contracts](./api-contracts.md)
 - [Data Models](./data-models.md)
-- [Component Inventory](./component-inventory.md)
-- [Source Tree](./source-tree-analysis.md)
 - [Development Guide](./development-guide.md)
+- [Current Project Status](./ai-project-status.md)
+- [Runbook](./runbook.md)

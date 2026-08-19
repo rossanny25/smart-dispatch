@@ -73,6 +73,44 @@ Stop the demo with:
 docker compose down
 ```
 
+## Optional local Ollama analyze adapter
+
+The default `ANALYZE` stage remains deterministic. For local-only demos, you can
+enable Ollama as an optional proposal adapter:
+
+```bash
+SMART_DISPATCH_ANALYZE_ADAPTER=ollama \
+OLLAMA_BASE_URL=http://127.0.0.1:11434 \
+OLLAMA_MODEL=llama3.1:8b \
+uv run smart-dispatch
+```
+
+Docker users can start the optional Ollama service with:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.ollama.yml up --build
+```
+
+For a local recording when Ollama is already running on the host with an
+available model, point the Docker app to the host runtime:
+
+```bash
+OLLAMA_BASE_URL=http://host.docker.internal:11434 \
+OLLAMA_MODEL=qwen2.5:latest \
+OLLAMA_TIMEOUT_SECONDS=60 \
+docker compose -f docker-compose.yml -f docker-compose.ollama.yml up -d
+```
+
+This is intentionally not configured in `render.yaml`; Render continues to use
+the deterministic adapter unless environment variables are manually changed.
+For the local video/demo flow, see
+[`docs/ollama-local-demo.md`](docs/ollama-local-demo.md).
+The quick verification command is:
+
+```bash
+SMART_DISPATCH_ANALYZE_ADAPTER=ollama uv run python tools/run_ollama_analyze_demo.py
+```
+
 ## Verification
 
 ```bash
@@ -84,14 +122,16 @@ serving, and an existing database is backed up through SQLite's backup API
 under `data/backups/` before upgrade. Runtime database and backup artifacts
 are ignored.
 
-Users and service technicians are SQLite-backed. A fresh database bootstraps
-technicians from `data/seeds/technicians.json`, then admin edits are stored in
-SQLite and affect dispatch immediately. The compatibility API reads
+Users, service technicians, service orders, and visit records are SQLite-backed.
+A fresh database bootstraps technicians from `data/seeds/technicians.json` and
+orders from `data/seeds/orders.json`, then admin edits and dispatch updates are
+stored in SQLite and affect dispatch immediately. The compatibility API reads
 `data/learning_store.json` as its initial evidence but writes changes to the
 ignored `data/learning_store.runtime.json` working copy, so the tracked
 evidence remains byte-preserved.
-Confirmed dispatches also create SQLite-backed `service_visits` records shown
-in the Calendario view.
+Confirmed dispatches and manually scheduled visits create SQLite-backed
+`service_visits` records shown in the Calendario view. The Mapa view is a local
+operational visualization over the same seeded/runtime records.
 
 ## Canonical Work Order capture
 
@@ -120,9 +160,10 @@ requirements, recommendations, and browser migration belong to later stories,
 so the current SPA continues to use the compatibility API.
 
 This MVP is local-first and uses SQLite-backed users, roles, technician
-operations, and completed visit history. HTTPS termination, public
-self-registration, password email delivery, manual scheduling, maps, and full
-work-order administration remain outside its current scope.
+operations, demo orders, manual visit scheduling, completed visit history, and a
+local operational map. HTTPS termination, public self-registration, password
+email delivery, external GIS/GPS integrations, and full canonical work-order
+administration remain outside its current scope.
 
 For the final delivery checklist, see
 [`docs/final-delivery-guide.md`](docs/final-delivery-guide.md).

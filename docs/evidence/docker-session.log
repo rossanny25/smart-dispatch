@@ -1,33 +1,98 @@
-smart-dispatch-ia  | INFO:     Started server process [1]
-smart-dispatch-ia  | INFO:     Waiting for application startup.
-smart-dispatch-ia  | INFO:     Application startup complete.
-smart-dispatch-ia  | INFO:     Uvicorn running on http://0.0.0.0:8050 (Press CTRL+C to quit)
-smart-dispatch-ia  | INFO:     192.168.65.1:58601 - "GET / HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58601 - "GET /index.css HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58602 - "GET /main.js HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58602 - "GET /api/technicians HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58601 - "GET /api/orders HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58604 - "GET /api/memory/learning HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58603 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-smart-dispatch-ia  | INFO:     192.168.65.1:58633 - "GET /api/technicians HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58635 - "GET /api/orders HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58634 - "GET /api/memory/learning HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58700 - "POST /api/dispatch/simulate HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58735 - "GET / HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58735 - "GET /index.css HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58734 - "GET /main.js HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58735 - "GET /api/orders HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58734 - "GET /api/technicians HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58736 - "GET /api/memory/learning HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58737 - "GET /favicon.ico HTTP/1.1" 404 Not Found
-smart-dispatch-ia  | INFO:     192.168.65.1:58738 - "POST /api/dispatch/confirm HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58745 - "GET /api/orders HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58743 - "GET /api/technicians HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58744 - "GET /api/memory/learning HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58806 - "POST /api/dispatch/simulate HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58871 - "POST /api/dispatch/confirm HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58871 - "GET /api/technicians HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58873 - "GET /api/orders HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58872 - "GET /api/memory/learning HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58878 - "GET /api/technicians HTTP/1.1" 200 OK
-smart-dispatch-ia  | INFO:     192.168.65.1:58907 - "GET /api/orders HTTP/1.1" 200 OK
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8050 (Press CTRL+C to quit)
+INFO:     192.168.65.1:39164 - "POST /auth/login HTTP/1.1" 200 OK
+INFO:     192.168.65.1:39171 - "POST /api/v1/admin/users HTTP/1.1" 201 Created
+INFO:     192.168.65.1:39201 - "POST /api/v1/admin/users HTTP/1.1" 201 Created
+INFO:     192.168.65.1:39545 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.65.1:39545 - "GET /index.css HTTP/1.1" 200 OK
+INFO:     192.168.65.1:39544 - "GET /main.js HTTP/1.1" 200 OK
+INFO:     192.168.65.1:39544 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+INFO:     192.168.65.1:39544 - "GET /auth/session HTTP/1.1" 200 OK
+INFO:     192.168.65.1:39544 - "GET /api/v1/admin/users HTTP/1.1" 200 OK
+INFO:     192.168.65.1:39544 - "GET /api/technicians HTTP/1.1" 200 OK
+INFO:     192.168.65.1:39545 - "GET /api/orders HTTP/1.1" 200 OK
+INFO:     192.168.65.1:39546 - "GET /api/visits HTTP/1.1" 200 OK
+INFO:     192.168.65.1:39547 - "GET /api/memory/learning HTTP/1.1" 200 OK
+INFO:     192.168.65.1:39974 - "POST /api/v1/admin/users HTTP/1.1" 201 Created
+INFO:     192.168.65.1:39974 - "GET /api/v1/admin/users HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40079 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40079 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+INFO:     192.168.65.1:40078 - "GET /index.css HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40078 - "GET /main.js HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40078 - "GET /auth/session HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40078 - "GET /api/v1/admin/users HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40078 - "GET /api/technicians HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40079 - "GET /api/orders HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40081 - "GET /api/memory/learning HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40080 - "GET /api/visits HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40189 - "POST /api/reset HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40189 - "GET /api/technicians HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40190 - "GET /api/memory/learning HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40192 - "GET /api/visits HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40191 - "GET /api/orders HTTP/1.1" 200 OK
+INFO:     192.168.65.1:40292 - "POST /api/v1/admin/users HTTP/1.1" 409 Conflict
+INFO:     192.168.65.1:40292 - "POST /api/v1/admin/users HTTP/1.1" 409 Conflict
+INFO:     192.168.65.1:40292 - "POST /api/v1/admin/users HTTP/1.1" 409 Conflict
+INFO:     192.168.65.1:40292 - "POST /api/v1/admin/users HTTP/1.1" 409 Conflict
+INFO:     192.168.65.1:40292 - "POST /api/v1/admin/users HTTP/1.1" 409 Conflict
+INFO:     192.168.65.1:40292 - "POST /api/v1/admin/users HTTP/1.1" 409 Conflict
+INFO:     192.168.65.1:40292 - "POST /api/v1/admin/users HTTP/1.1" 409 Conflict
+INFO:     192.168.65.1:40292 - "POST /api/v1/admin/users HTTP/1.1" 409 Conflict
+INFO:     192.168.65.1:40292 - "POST /api/v1/admin/users HTTP/1.1" 409 Conflict
+INFO:     192.168.65.1:40326 - "POST /api/v1/admin/users HTTP/1.1" 409 Conflict
+INFO:     192.168.65.1:41040 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.65.1:41040 - "GET /main.js HTTP/1.1" 200 OK
+INFO:     192.168.65.1:41039 - "GET /index.css HTTP/1.1" 200 OK
+INFO:     192.168.65.1:41041 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 Not Found
+INFO:     192.168.65.1:41041 - "GET /auth/session HTTP/1.1" 200 OK
+INFO:     192.168.65.1:41039 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     192.168.65.1:41041 - "GET /api/v1/admin/users HTTP/1.1" 200 OK
+INFO:     192.168.65.1:41041 - "GET /api/technicians HTTP/1.1" 200 OK
+INFO:     192.168.65.1:41039 - "GET /api/orders HTTP/1.1" 200 OK
+INFO:     192.168.65.1:41040 - "GET /api/memory/learning HTTP/1.1" 200 OK
+INFO:     192.168.65.1:41042 - "GET /api/visits HTTP/1.1" 200 OK
+INFO:     192.168.65.1:41426 - "POST /api/v1/admin/users HTTP/1.1" 422 Unprocessable Entity
+INFO:     192.168.65.1:42226 - "POST /api/reset HTTP/1.1" 200 OK
+INFO:     192.168.65.1:42581 - "GET / HTTP/1.1" 303 See Other
+INFO:     192.168.65.1:42581 - "GET /login HTTP/1.1" 200 OK
+INFO:     192.168.65.1:42581 - "GET /index.css HTTP/1.1" 200 OK
+INFO:     192.168.65.1:42581 - "GET /favicon.ico HTTP/1.1" 303 See Other
+INFO:     192.168.65.1:42798 - "GET / HTTP/1.1" 303 See Other
+INFO:     192.168.65.1:42798 - "GET /login HTTP/1.1" 200 OK
+INFO:     192.168.65.1:42798 - "GET /index.css HTTP/1.1" 200 OK
+INFO:     192.168.65.1:42798 - "GET /favicon.ico HTTP/1.1" 303 See Other
+INFO:     192.168.65.1:42939 - "GET / HTTP/1.1" 303 See Other
+INFO:     192.168.65.1:42939 - "GET /login HTTP/1.1" 200 OK
+INFO:     192.168.65.1:42939 - "GET /index.css HTTP/1.1" 200 OK
+INFO:     192.168.65.1:42939 - "GET /favicon.ico HTTP/1.1" 303 See Other
+INFO:     192.168.65.1:43006 - "GET / HTTP/1.1" 303 See Other
+INFO:     192.168.65.1:43006 - "GET /login HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43006 - "GET /index.css HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43006 - "GET /favicon.ico HTTP/1.1" 303 See Other
+INFO:     192.168.65.1:43073 - "GET / HTTP/1.1" 303 See Other
+INFO:     192.168.65.1:43073 - "GET /login HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43073 - "GET /index.css HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43073 - "GET /favicon.ico HTTP/1.1" 303 See Other
+INFO:     192.168.65.1:43073 - "POST /auth/login HTTP/1.1" 303 See Other
+INFO:     192.168.65.1:43073 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43073 - "GET /main.js HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43073 - "GET /auth/session HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43078 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     192.168.65.1:43073 - "GET /api/v1/admin/users HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43073 - "GET /api/technicians HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43078 - "GET /api/orders HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43079 - "GET /api/memory/learning HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43080 - "GET /api/visits HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43080 - "POST /api/dispatch/simulate HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43080 - "POST /api/dispatch/confirm HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43080 - "GET /api/technicians HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43123 - "GET /api/orders HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43122 - "GET /api/memory/learning HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43124 - "GET /api/visits HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43158 - "POST /api/dispatch/simulate HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43192 - "GET /api/technicians HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43193 - "GET /api/orders HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43227 - "GET /api/technicians HTTP/1.1" 200 OK
+INFO:     192.168.65.1:43228 - "GET /api/orders HTTP/1.1" 200 OK
