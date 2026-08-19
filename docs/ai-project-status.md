@@ -57,6 +57,7 @@ cold start before judging the deployment.
 | User and role administration | Done | SQLite-backed users, admin bootstrap, role-aware login, and admin UI. |
 | Technician administration | Done | Runtime technicians are SQLite-backed and editable by admins. |
 | Dashboard navigation | Done | Main screen uses section navigation; admin users/technicians open in a separate window. |
+| Visit calendar | Done | Confirmed dispatches create SQLite-backed service visits shown in Calendario. |
 
 ## Stack
 
@@ -158,13 +159,15 @@ Important directories:
 
 ## Data Loading
 
-The project has SQLite-backed users, basic role administration, and editable
-service technicians. Technician records are bootstrapped once from:
+The project has SQLite-backed users, basic role administration, editable
+service technicians, and completed service visits. Technician records are
+bootstrapped once from:
 
 - `data/seeds/technicians.json`
 
 After startup, runtime technician edits are stored in SQLite and used by
-dispatch simulation immediately. Demo work orders still load from:
+dispatch simulation immediately. Completed dispatches create `service_visits`
+records in SQLite for the Calendario view. Demo work orders still load from:
 
 - `data/seeds/orders.json`
 
@@ -305,7 +308,7 @@ Do not treat these as accidental omissions. They are documented MVP boundaries.
 Only do these if the user asks for more after the final delivery:
 
 1. Expand technician profiles with contact fields, documents, and audit history.
-2. Add visit calendar views per technician.
+2. Expand the calendar into manual scheduling and visit status changes.
 3. Add no-cost map visualization for visits and zones.
 4. Migrate demo work orders and dispatch execution fully into SQLite-backed operational records.
 5. Add a dedicated seeded `NO_FEASIBLE_CANDIDATES` order so the no-forced-recommendation state is easy to demo.

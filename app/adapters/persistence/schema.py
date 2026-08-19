@@ -139,6 +139,43 @@ service_technicians = Table(
     ),
 )
 
+service_visits = Table(
+    "service_visits",
+    metadata,
+    Column("id", Text, primary_key=True, nullable=False),
+    Column("order_id", Text, nullable=False),
+    Column(
+        "technician_id",
+        Text,
+        ForeignKey("service_technicians.id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
+    Column("technician_name", Text, nullable=False),
+    Column("client", Text, nullable=False),
+    Column("address", Text, nullable=False),
+    Column("zone", Text, nullable=False),
+    Column("category", Text, nullable=False),
+    Column("status", Text, nullable=False),
+    Column("scheduled_start_at", Text, nullable=False),
+    Column("scheduled_end_at", Text, nullable=False),
+    Column("duration_minutes", Integer, nullable=False),
+    Column("feedback_comment", Text, nullable=False),
+    Column("created_at", Text, nullable=False),
+    Column("updated_at", Text, nullable=False),
+    CheckConstraint(
+        "status IN ('programada','completada','cancelada')",
+        name="ck_service_visits_status",
+    ),
+    CheckConstraint("duration_minutes BETWEEN 1 AND 1440", name="ck_service_visits_duration"),
+    CheckConstraint("length(order_id) BETWEEN 1 AND 120", name="ck_service_visits_order"),
+    CheckConstraint("length(technician_name) BETWEEN 2 AND 120", name="ck_service_visits_technician_name"),
+    CheckConstraint("length(zone) BETWEEN 2 AND 80", name="ck_service_visits_zone"),
+    UniqueConstraint("order_id", name="uq_service_visits_order"),
+)
+
+Index("ix_service_visits_technician_start", service_visits.c.technician_id, service_visits.c.scheduled_start_at)
+Index("ix_service_visits_start", service_visits.c.scheduled_start_at)
+
 work_order_analyses = Table(
     "work_order_analyses",
     metadata,

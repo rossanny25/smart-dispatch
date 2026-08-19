@@ -5,6 +5,7 @@ const API_BASE = window.location.origin;
 let technicians = [];
 let orders = [];
 let memoryLearnings = [];
+let serviceVisits = [];
 let currentSimulationData = null;
 let selectedOrder = null;
 let currentSession = null;
@@ -66,6 +67,10 @@ const guidedDemoSteps = document.querySelectorAll('.guided-step');
 const ordersList = document.getElementById('orders-list');
 const techniciansGrid = document.getElementById('technicians-grid');
 const memoryList = document.getElementById('memory-list');
+const calendarTechFilter = document.getElementById('calendar-tech-filter');
+const calendarSummary = document.getElementById('calendar-summary');
+const calendarList = document.getElementById('calendar-list');
+const calendarCount = document.getElementById('calendar-count');
 
 const agentCycleCard = document.getElementById('agent-cycle-card');
 const cycleStatusText = document.getElementById('cycle-status-text');
@@ -597,19 +602,26 @@ adminClearTech.addEventListener('click', resetAdminTechForm);
 
 async function loadData() {
   try {
-    const [techRes, ordersRes, memoryRes] = await Promise.all([
+    const [techRes, ordersRes, memoryRes, visitsRes] = await Promise.all([
       fetch(`${API_BASE}/api/technicians`),
       fetch(`${API_BASE}/api/orders`),
-      fetch(`${API_BASE}/api/memory/learning`)
+      fetch(`${API_BASE}/api/memory/learning`),
+      fetch(`${API_BASE}/api/visits`)
     ]);
 
-    technicians = await techRes.json();
-    orders = await ordersRes.json();
-    memoryLearnings = await memoryRes.json();
+    technicians = techRes.ok ? await techRes.json() : [];
+    orders = ordersRes.ok ? await ordersRes.json() : [];
+    memoryLearnings = memoryRes.ok ? await memoryRes.json() : [];
+    const visitsPayload = visitsRes.ok ? await visitsRes.json() : [];
+    if (!Array.isArray(technicians)) technicians = [];
+    if (!Array.isArray(orders)) orders = [];
+    if (!Array.isArray(memoryLearnings)) memoryLearnings = [];
+    serviceVisits = Array.isArray(visitsPayload) ? visitsPayload : [];
 
     renderTechnicians();
     renderOrders();
     renderMemory();
+    renderCalendar();
     populateOverrideSelect();
   } catch (error) {
     console.error('Error al cargar datos del backend:', error);
@@ -716,6 +728,118 @@ function renderOrders() {
     });
   });
 }
+
+function populateCalendarFilter() {
+  const selectedValue = calendarTechFilter.value;
+  calendarTechFilter.innerHTML = '<option value="">Todos los técnicos</option>';
+  technicians.forEach(tech => {
+    const option = document.createElement('option');
+    option.value = tech.id;
+    option.textContent = tech.name;
+    calendarTechFilter.appendChild(option);
+  });
+  if (selectedValue && technicians.some(tech => tech.id === selectedValue)) {
+    calendarTechFilter.value = selectedValue;
+  }
+}
+
+function formatVisitDate(value) {
+  if (!value) return 'Fecha no informada';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('es-AR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short'
+  });
+}
+
+function formatVisitTime(value) {
+  if (!value) return '--:--';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value.slice(11, 16) || value;
+  return date.toLocaleTimeString('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function renderCalendar() {
+  populateCalendarFilter();
+  const selectedTechnician = calendarTechFilter.value;
+  const visibleVisits = selectedTechnician
+    ? serviceVisits.filter(visit => visit.technician_id === selectedTechnician)
+    : serviceVisits;
+
+  calendarCount.textContent = `${visibleVisits.length} visita${visibleVisits.length === 1 ? '' : 's'}`;
+  calendarCount.className = visibleVisits.length
+    ? 'badge badge-status-completada'
+    : 'badge badge-status-pendiente';
+  const completed = visibleVisits.filter(visit => visit.status === 'completada').length;
+  calendarSummary.textContent = visibleVisits.length
+    ? `${completed} completadas. La agenda se alimenta al cerrar despachos reales.`
+    : 'Sin visitas registradas para el filtro actual.';
+  calendarList.innerHTML = '';
+
+  if (visibleVisits.length === 0) {
+    calendarList.innerHTML = `
+      <div class="calendar-empty">
+        Completa una asignación desde la consola para que aparezca como visita en esta agenda.
+      </div>
+    `;
+    return;
+  }
+
+  const groupedVisits = visibleVisits.reduce((groups, visit) => {
+    const groupKey = `${formatVisitDate(visit.scheduled_start_at)}__${visit.technician_id}`;
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, {
+        date: formatVisitDate(visit.scheduled_start_at),
+        technician: visit.technician_name,
+        visits: []
+      });
+    }
+    groups.get(groupKey).visits.push(visit);
+    return groups;
+  }, new Map());
+
+  groupedVisits.forEach(group => {
+    const groupEl = document.createElement('section');
+    groupEl.className = 'calendar-group';
+    groupEl.innerHTML = `
+      <div class="calendar-group-header">
+        <strong>${escapeHtml(group.date)}</strong>
+        <span>${escapeHtml(group.technician)} · ${group.visits.length} visita${group.visits.length === 1 ? '' : 's'}</span>
+      </div>
+    `;
+    calendarList.appendChild(groupEl);
+
+    group.visits.forEach(visit => {
+      const card = document.createElement('div');
+      card.className = 'calendar-visit-card';
+      card.innerHTML = `
+        <div class="visit-date">
+          <strong>${escapeHtml(formatVisitDate(visit.scheduled_start_at))}</strong>
+          <span>${escapeHtml(formatVisitTime(visit.scheduled_start_at))} - ${escapeHtml(formatVisitTime(visit.scheduled_end_at))}</span>
+        </div>
+        <div class="visit-main">
+          <div class="visit-title">${escapeHtml(visit.client)} · ${escapeHtml(visit.category)}</div>
+          <div class="visit-meta">
+            <span><i class="fa-solid fa-user-gear"></i> ${escapeHtml(visit.technician_name)}</span>
+            <span><i class="fa-solid fa-location-dot"></i> ${escapeHtml(visit.zone)}</span>
+            <span><i class="fa-solid fa-clock"></i> ${escapeHtml(visit.duration_minutes)} min</span>
+          </div>
+          <div class="visit-address">${escapeHtml(visit.address)}</div>
+          ${visit.feedback_comment ? `<div class="visit-feedback">${escapeHtml(visit.feedback_comment)}</div>` : ''}
+        </div>
+        <span class="badge badge-status-${escapeHtml(visit.status)}">${escapeHtml(visit.status)}</span>
+      `;
+      groupEl.appendChild(card);
+    });
+  });
+}
+
+calendarTechFilter.addEventListener('change', renderCalendar);
 
 // Renderizar memoria semántica
 function renderMemory() {
@@ -1133,6 +1257,8 @@ modalClose.addEventListener('click', () => {
 
 completionForm.addEventListener('submit', async (e) => {
   e.preventDefault();
+  const submitButton = completionForm.querySelector('button[type="submit"]');
+  if (submitButton?.disabled) return;
 
   const payload = {
     order_id: modalOrderId.value,
@@ -1142,6 +1268,7 @@ completionForm.addEventListener('submit', async (e) => {
   };
 
   try {
+    if (submitButton) submitButton.disabled = true;
     const res = await fetch(`${API_BASE}/api/dispatch/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1173,10 +1300,12 @@ completionForm.addEventListener('submit', async (e) => {
 
       // Recargar datos
       await loadData();
-      switchAppView('orders');
+      switchAppView('calendar');
     }
   } catch (error) {
     console.error('Error al confirmar despacho:', error);
+  } finally {
+    if (submitButton) submitButton.disabled = false;
   }
 });
 

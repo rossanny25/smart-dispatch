@@ -196,6 +196,122 @@ def test_technicians_are_bootstrapped_from_sqlite_runtime(tmp_path: Path) -> Non
     assert all("created_at" in technician for technician in technicians)
 
 
+def test_service_visits_start_empty_and_confirmation_creates_visit(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    learning_store = tmp_path / "learning_store.json"
+    learning_store.write_bytes((PROJECT_ROOT / "data" / "learning_store.json").read_bytes())
+    monkeypatch.setenv("SMART_DISPATCH_LEARNING_STORE_PATH", str(learning_store))
+
+    app = _app_with_runtime(tmp_path)
+
+    empty_status, _, empty_body = request_asgi(app, "/api/visits")
+    confirm_status, _, confirm_body = request_asgi(
+        app,
+        "/api/dispatch/confirm",
+        method="POST",
+        json_body={
+            "order_id": "order_001",
+            "technician_id": "tech_03",
+            "duration_minutes": 120,
+            "feedback_comment": "Agenda confirmada",
+        },
+    )
+    visits_status, _, visits_body = request_asgi(app, "/api/visits")
+
+    visit = json.loads(confirm_body)["visit"]
+    visits = json.loads(visits_body)
+    assert empty_status == visits_status == 200
+    assert json.loads(empty_body) == []
+    assert confirm_status == 200
+    assert visit["order_id"] == "order_001"
+    assert visit["technician_id"] == "tech_03"
+    assert visit["status"] == "completada"
+    assert visit["duration_minutes"] == 120
+    assert visit["feedback_comment"] == "Agenda confirmada"
+    assert visits == [visit]
+    admin_cookie = _admin_cookie(app)
+    rename_status, _, _ = request_asgi(
+        app,
+        "/api/technicians/tech_03",
+        method="PATCH",
+        headers={"cookie": admin_cookie, "idempotency-key": "rename-calendar-tech"},
+        json_body={"name": "Juan Perez Actualizado"},
+        authenticated=False,
+    )
+    renamed_visits_status, _, renamed_visits_body = request_asgi(app, "/api/visits")
+    renamed_visit = json.loads(renamed_visits_body)[0]
+    assert rename_status == renamed_visits_status == 200
+    assert renamed_visit["technician_name"] == "Juan Perez Actualizado"
+    tech_status, _, tech_body = request_asgi(app, "/api/technicians")
+    workload_after_first = next(
+        tech["active_workload_hours"]
+        for tech in json.loads(tech_body)
+        if tech["id"] == "tech_03"
+    )
+
+    duplicate_status, _, duplicate_body = request_asgi(
+        app,
+        "/api/dispatch/confirm",
+        method="POST",
+        json_body={
+            "order_id": "order_001",
+            "technician_id": "tech_03",
+            "duration_minutes": 120,
+            "feedback_comment": "Reintento",
+        },
+    )
+    visits_again_status, _, visits_again_body = request_asgi(app, "/api/visits")
+    tech_again_status, _, tech_again_body = request_asgi(app, "/api/technicians")
+    workload_after_retry = next(
+        tech["active_workload_hours"]
+        for tech in json.loads(tech_again_body)
+        if tech["id"] == "tech_03"
+    )
+
+    assert duplicate_status == visits_again_status == tech_status == tech_again_status == 200
+    duplicate_visit = json.loads(duplicate_body)["visit"]
+    visits_again = json.loads(visits_again_body)
+    assert duplicate_visit["id"] == visit["id"]
+    assert duplicate_visit["technician_name"] == "Juan Perez Actualizado"
+    assert visits_again == [duplicate_visit]
+    assert workload_after_retry == workload_after_first
+
+
+def test_reset_clears_service_visits(tmp_path: Path, monkeypatch) -> None:
+    learning_store = tmp_path / "learning_store.json"
+    learning_store.write_bytes((PROJECT_ROOT / "data" / "learning_store.json").read_bytes())
+    monkeypatch.setenv("SMART_DISPATCH_LEARNING_STORE_PATH", str(learning_store))
+
+    app = _app_with_runtime(tmp_path)
+    cookie = _admin_cookie(app)
+    request_asgi(
+        app,
+        "/api/dispatch/confirm",
+        method="POST",
+        json_body={
+            "order_id": "order_001",
+            "technician_id": "tech_03",
+            "duration_minutes": 90,
+            "feedback_comment": "",
+        },
+    )
+
+    reset_status, _, _ = request_asgi(
+        app,
+        "/api/reset",
+        method="POST",
+        headers={"cookie": cookie},
+        json_body={},
+        authenticated=False,
+    )
+    visits_status, _, visits_body = request_asgi(app, "/api/visits")
+
+    assert reset_status == visits_status == 200
+    assert json.loads(visits_body) == []
+
+
 def test_admin_can_create_and_edit_service_technicians(tmp_path: Path) -> None:
     app = _app_with_runtime(tmp_path)
     cookie = _admin_cookie(app)

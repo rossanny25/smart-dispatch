@@ -692,6 +692,120 @@ textarea {
   padding: 12px;
 }
 
+/* --- CALENDARIO DE VISITAS --- */
+.calendar-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) 1fr;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+
+.calendar-summary {
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-glass);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-secondary);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.calendar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.calendar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.calendar-group-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 8px 2px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.calendar-group-header strong {
+  color: var(--text-primary);
+  font-family: var(--font-title);
+}
+
+.calendar-empty {
+  padding: 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 12px;
+}
+
+.calendar-visit-card {
+  display: grid;
+  grid-template-columns: 150px 1fr auto;
+  gap: 14px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid var(--border-glass);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.visit-date {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.visit-date strong,
+.visit-title {
+  font-family: var(--font-title);
+  font-size: 13px;
+}
+
+.visit-date span,
+.visit-address,
+.visit-feedback {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.visit-main {
+  min-width: 0;
+}
+
+.visit-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 6px 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.visit-feedback {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-left: 2px solid var(--accent-cyan);
+  background: rgba(0, 210, 211, 0.06);
+  border-radius: 8px;
+}
+
+.visit-title,
+.visit-address,
+.visit-feedback {
+  overflow-wrap: anywhere;
+}
+
 .ops-explainer,
 .decision-explainer,
 .decision-breakdown {
@@ -1472,6 +1586,11 @@ textarea {
   }
 
   .admin-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-toolbar,
+  .calendar-visit-card {
     grid-template-columns: 1fr;
   }
 

@@ -90,6 +90,8 @@ SQLite and affect dispatch immediately. The compatibility API reads
 `data/learning_store.json` as its initial evidence but writes changes to the
 ignored `data/learning_store.runtime.json` working copy, so the tracked
 evidence remains byte-preserved.
+Confirmed dispatches also create SQLite-backed `service_visits` records shown
+in the Calendario view.
 
 ## Canonical Work Order capture
 
@@ -117,10 +119,10 @@ This slice captures only schema-valid raw input. Dispatch analysis, derived
 requirements, recommendations, and browser migration belong to later stories,
 so the current SPA continues to use the compatibility API.
 
-This MVP is local-first and uses SQLite-backed users, roles, and technician
-operations. HTTPS termination, public self-registration, password email
-delivery, visit calendars, maps, and full work-order administration remain
-outside its current scope.
+This MVP is local-first and uses SQLite-backed users, roles, technician
+operations, and completed visit history. HTTPS termination, public
+self-registration, password email delivery, manual scheduling, maps, and full
+work-order administration remain outside its current scope.
 
 For the final delivery checklist, see
 [`docs/final-delivery-guide.md`](docs/final-delivery-guide.md).

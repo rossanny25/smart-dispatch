@@ -1,6 +1,6 @@
 """Mechanical FastAPI relocation of the original ``server.py`` API behavior."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 import json
 import os
@@ -131,6 +131,13 @@ def _connect() -> sqlite3.Connection:
 def _technician_table_exists(connection: sqlite3.Connection) -> bool:
     row = connection.execute(
         "SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = 'service_technicians'"
+    ).fetchone()
+    return row is not None
+
+
+def _visits_table_exists(connection: sqlite3.Connection) -> bool:
+    row = connection.execute(
+        "SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = 'service_visits'"
     ).fetchone()
     return row is not None
 
@@ -528,6 +535,170 @@ def reset_service_technicians() -> None:
     bootstrap_service_technicians()
 
 
+def _row_to_visit(row: sqlite3.Row) -> dict[str, Any]:
+    return {
+        "id": str(row["id"]),
+        "order_id": str(row["order_id"]),
+        "technician_id": str(row["technician_id"]),
+        "technician_name": str(row["technician_name"]),
+        "client": str(row["client"]),
+        "address": str(row["address"]),
+        "zone": str(row["zone"]),
+        "category": str(row["category"]),
+        "status": str(row["status"]),
+        "scheduled_start_at": str(row["scheduled_start_at"]),
+        "scheduled_end_at": str(row["scheduled_end_at"]),
+        "duration_minutes": int(row["duration_minutes"]),
+        "feedback_comment": str(row["feedback_comment"]),
+        "created_at": str(row["created_at"]),
+        "updated_at": str(row["updated_at"]),
+    }
+
+
+def _select_visit_by_order(
+    connection: sqlite3.Connection,
+    order_id: str,
+) -> sqlite3.Row | None:
+    return connection.execute(
+        """
+        SELECT
+            v.id,
+            v.order_id,
+            v.technician_id,
+            COALESCE(t.name, v.technician_name) AS technician_name,
+            v.client,
+            v.address,
+            v.zone,
+            v.category,
+            v.status,
+            v.scheduled_start_at,
+            v.scheduled_end_at,
+            v.duration_minutes,
+            v.feedback_comment,
+            v.created_at,
+            v.updated_at
+        FROM service_visits AS v
+        LEFT JOIN service_technicians AS t ON t.id = v.technician_id
+        WHERE v.order_id = ?
+        """,
+        (order_id,),
+    ).fetchone()
+
+
+def find_service_visit_by_order(order_id: str) -> dict[str, Any] | None:
+    with _connect() as connection:
+        if not _visits_table_exists(connection):
+            return None
+        row = _select_visit_by_order(connection, order_id)
+    return _row_to_visit(row) if row is not None else None
+
+
+def list_service_visits() -> list[dict[str, Any]]:
+    with _connect() as connection:
+        if not _visits_table_exists(connection):
+            return []
+        rows = connection.execute(
+            """
+            SELECT
+                v.id,
+                v.order_id,
+                v.technician_id,
+                COALESCE(t.name, v.technician_name) AS technician_name,
+                v.client,
+                v.address,
+                v.zone,
+                v.category,
+                v.status,
+                v.scheduled_start_at,
+                v.scheduled_end_at,
+                v.duration_minutes,
+                v.feedback_comment,
+                v.created_at,
+                v.updated_at
+            FROM service_visits AS v
+            LEFT JOIN service_technicians AS t ON t.id = v.technician_id
+            ORDER BY v.scheduled_start_at DESC, v.created_at DESC
+            """
+        ).fetchall()
+    return [_row_to_visit(row) for row in rows]
+
+
+def create_service_visit(
+    *,
+    order: dict[str, Any],
+    technician: dict[str, Any],
+    duration_minutes: int,
+    feedback_comment: str,
+) -> dict[str, Any]:
+    minutes = max(1, min(1440, int(duration_minutes or 90)))
+    started_at = datetime.now(UTC)
+    ended_at = started_at + timedelta(minutes=minutes)
+    now = started_at.isoformat().replace("+00:00", "Z")
+    visit = {
+        "id": f"visit_{uuid4().hex[:10]}",
+        "order_id": str(order["id"]),
+        "technician_id": str(technician["id"]),
+        "technician_name": str(technician["name"]),
+        "client": str(order.get("client") or "Cliente"),
+        "address": str(order.get("address") or ""),
+        "zone": str(order.get("zone") or technician.get("zone") or ""),
+        "category": str(order.get("structured_data", {}).get("category") or "Servicio"),
+        "status": "completada",
+        "scheduled_start_at": started_at.isoformat().replace("+00:00", "Z"),
+        "scheduled_end_at": ended_at.isoformat().replace("+00:00", "Z"),
+        "duration_minutes": minutes,
+        "feedback_comment": feedback_comment.strip(),
+        "created_at": now,
+        "updated_at": now,
+    }
+    with _connect() as connection:
+        if not _visits_table_exists(connection):
+            raise RuntimeError("service_visits table is unavailable")
+        existing = _select_visit_by_order(connection, visit["order_id"])
+        if existing is not None:
+            return _row_to_visit(existing)
+        try:
+            connection.execute(
+                """
+                INSERT INTO service_visits (
+                    id, order_id, technician_id, technician_name, client, address,
+                    zone, category, status, scheduled_start_at, scheduled_end_at,
+                    duration_minutes, feedback_comment, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    visit["id"],
+                    visit["order_id"],
+                    visit["technician_id"],
+                    visit["technician_name"],
+                    visit["client"],
+                    visit["address"],
+                    visit["zone"],
+                    visit["category"],
+                    visit["status"],
+                    visit["scheduled_start_at"],
+                    visit["scheduled_end_at"],
+                    visit["duration_minutes"],
+                    visit["feedback_comment"],
+                    visit["created_at"],
+                    visit["updated_at"],
+                ),
+            )
+        except sqlite3.IntegrityError:
+            existing = _select_visit_by_order(connection, visit["order_id"])
+            if existing is not None:
+                return _row_to_visit(existing)
+            raise
+    return visit
+
+
+def reset_service_visits() -> None:
+    with _connect() as connection:
+        if _visits_table_exists(connection):
+            connection.execute("DELETE FROM service_visits")
+
+
 def _looks_like_actionable_order(raw_text: str, address: str) -> bool:
     text = _normalize_text(raw_text)
     normalized = re.sub(r"[^a-z0-9 ]+", " ", text)
@@ -790,11 +961,17 @@ async def list_memory() -> list[dict[str, Any]]:
     return read_learnings()
 
 
+@router.get("/api/visits")
+async def list_visits() -> list[dict[str, Any]]:
+    return list_service_visits()
+
+
 @router.post("/api/reset")
 async def reset_simulation(request: Request) -> JSONResponse:
     if not request_is_admin(request, _database_path()):
         return JSONResponse({"error": "admin_required"}, status_code=403)
     init_storage()
+    reset_service_visits()
     reset_service_technicians()
     orders[:] = load_seed_list(SEED_ORDERS_PATH)
     if SEED_LEARNING_STORE_PATH.exists():
@@ -1061,17 +1238,24 @@ async def confirm_dispatch(request: Request) -> JSONResponse:
     if order is None or technician is None:
         return JSONResponse({"error": "Orden o Técnico no encontrado"}, status_code=404)
 
-    order["status"] = "completada"
-    update_service_technician(
-        technician["id"],
-        {"active_workload_hours": technician["active_workload_hours"] + 1.5},
-    )
+    existing_visit = find_service_visit_by_order(str(order["id"]))
+    if existing_visit is not None:
+        return JSONResponse(
+            {
+                "message": "Asignación ya estaba registrada.",
+                "learnings_updated": [],
+                "visit": existing_visit,
+            }
+        )
+
     learnings = read_learnings()
     new_learnings: list[dict[str, Any]] = []
     duration = body.get("duration_minutes")
+    visit_duration_minutes = 90
     if duration:
         try:
             minutes = int(duration)
+            visit_duration_minutes = minutes
             deviation = minutes / 90
             if deviation < 0.85 or deviation > 1.15:
                 key = (
@@ -1128,10 +1312,22 @@ async def confirm_dispatch(request: Request) -> JSONResponse:
         learnings = [entry for entry in learnings if entry["key"] != key]
         learnings.append(item)
         new_learnings.append(item)
+    visit = create_service_visit(
+        order=order,
+        technician=technician,
+        duration_minutes=visit_duration_minutes,
+        feedback_comment=feedback,
+    )
+    order["status"] = "completada"
+    update_service_technician(
+        technician["id"],
+        {"active_workload_hours": technician["active_workload_hours"] + 1.5},
+    )
     write_learnings(learnings)
     return JSONResponse(
         {
             "message": "Asignación completada y feedback procesado.",
             "learnings_updated": new_learnings,
+            "visit": visit,
         }
     )

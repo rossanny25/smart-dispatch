@@ -67,12 +67,22 @@ still lacks canonical run state, data freshness, and a stable error envelope.
 
 Accepts an order, selected technician, override flag/feedback, and optional
 real duration. It updates order state in compatibility storage, increments the
-selected technician workload in SQLite, and may write learning records.
+selected technician workload in SQLite, may write learning records, and returns
+the created `visit`. If the same order was already confirmed, it returns the
+existing visit with `learnings_updated: []` and does not increment workload
+again.
+
+## GET `/api/visits`
+
+Returns SQLite-backed completed service visits for the calendar view, including
+order, technician, zone, time window, duration, feedback, and status. Technician
+names are resolved from the current SQLite technician roster when available.
 
 ## POST `/api/reset`
 
 Reloads runtime technicians and demo orders from seeds, and restores the
-learning runtime file from `data/learning_store.json`.
+learning runtime file from `data/learning_store.json`. It also clears
+SQLite-backed service visits.
 
 ## GET `/api/v1/admin/users`
 

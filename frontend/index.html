@@ -77,6 +77,10 @@
         <i class="fa-solid fa-users"></i>
         <span>Técnicos</span>
       </button>
+      <button type="button" class="section-nav-btn" data-view-target="calendar">
+        <i class="fa-solid fa-calendar-days"></i>
+        <span>Calendario</span>
+      </button>
       <button type="button" class="section-nav-btn" data-view-target="memory">
         <i class="fa-solid fa-database"></i>
         <span>Memoria</span>
@@ -431,6 +435,30 @@
               <strong>Lectura operacional:</strong> cada tarjeta muestra estado, zona base, turno, carga acumulada, certificaciones, EPP y última coordenada conocida. El backend usa estos datos como restricciones antes de puntuar candidatos.
             </div>
             <div id="technicians-grid" class="tech-grid">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Calendario de visitas -->
+        <div class="card card-glass app-view view-hidden" data-view="calendar">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-calendar-days"></i> Calendario de Visitas</h2>
+            <span class="badge badge-status-pendiente" id="calendar-count">Sin visitas</span>
+          </div>
+          <div class="card-body">
+            <div class="calendar-toolbar">
+              <div class="form-group">
+                <label for="calendar-tech-filter">Técnico</label>
+                <select id="calendar-tech-filter">
+                  <option value="">Todos los técnicos</option>
+                </select>
+              </div>
+              <div class="calendar-summary" id="calendar-summary">
+                Sin visitas registradas todavía.
+              </div>
+            </div>
+            <div id="calendar-list" class="calendar-list">
               <!-- Cargado dinámicamente -->
             </div>
           </div>

@@ -117,6 +117,15 @@ eligibility, scoring, hard-rule evidence, and override options. Use the in-app
 - PPE
 - GPS lat/lng
 
+## Visit Calendar
+
+Confirmed dispatches create SQLite-backed `service_visits` records. Open the
+`Calendario` section in the app to review completed visits by technician, time
+window, zone, duration, and feedback. The current slice records visits from the
+dispatch confirmation flow. Repeated confirmation attempts for the same order
+return the existing visit instead of creating duplicate calendar entries;
+manual scheduling and drag-and-drop calendar edits are intentionally deferred.
+
 ## Verify The App Is Running
 
 Browser check:
@@ -334,10 +343,25 @@ Use this section as the running implementation log for the final report and proj
 - Kept technician edit actions on the field-service cards; selecting Editar
   opens the admin window directly on the technician form.
 
+### 2026-08-19 - Service Visit Calendar
+
+- Added SQLite `service_visits` storage through Alembic revision
+  `20260819_0010`.
+- Added `/api/visits` for authenticated calendar reads.
+- Dispatch confirmation now records a completed visit with order, technician,
+  zone, time window, duration, and feedback.
+- Repeated confirmation attempts for the same order return the existing visit
+  and keep one calendar entry.
+- Reset clears visits before reseeding technicians so foreign keys remain
+  valid.
+- Added a `Calendario` section with technician filter, visit counts, and empty
+  state.
+- Verified focused legacy/migration tests: `49 passed`.
+
 ## Next Technical Actions
 
 - Expand technician profile pages with contact fields and audit history.
-- Add visit calendar views per technician.
+- Expand the calendar into manual scheduling and visit status changes.
 - Add no-cost map visualization.
 - Migrate demo work orders from compatibility storage into SQLite operational records.
 - Add a dedicated seeded `NO_FEASIBLE_CANDIDATES` order.
