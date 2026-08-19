@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import os
 import selectors
+import socket
 import subprocess
 import sys
 import time
@@ -12,11 +13,21 @@ from urllib.request import Request, urlopen
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CONSOLE_SCRIPT = Path(sys.executable).parent / "smart-dispatch"
-LOCAL_URL = "http://127.0.0.1:8000"
 LEARNING_SEED = PROJECT_ROOT / "data" / "learning_store.json"
 
 
-def wait_for_uvicorn_ready(process: subprocess.Popen[str], timeout: float = 10) -> None:
+def free_port() -> int:
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+
+
+def wait_for_uvicorn_ready(
+    process: subprocess.Popen[str],
+    *,
+    port: int,
+    timeout: float = 10,
+) -> None:
     assert process.stderr is not None
     selector = selectors.DefaultSelector()
     selector.register(process.stderr, selectors.EVENT_READ)
@@ -33,7 +44,7 @@ def wait_for_uvicorn_ready(process: subprocess.Popen[str], timeout: float = 10) 
             for key, _ in selector.select(timeout=0.1):
                 line = key.fileobj.readline()
                 captured.append(line)
-                if "Uvicorn running on http://127.0.0.1:8000" in line:
+                if f"Uvicorn running on http://127.0.0.1:{port}" in line:
                     assert process.poll() is None
                     return
     finally:
@@ -41,7 +52,12 @@ def wait_for_uvicorn_ready(process: subprocess.Popen[str], timeout: float = 10) 
     raise AssertionError(f"spawned process readiness timed out: {''.join(captured)}")
 
 
-def wait_for_http(process: subprocess.Popen[str], timeout: float = 3) -> bytes:
+def wait_for_http(
+    process: subprocess.Popen[str],
+    *,
+    base_url: str,
+    timeout: float = 3,
+) -> bytes:
     deadline = time.monotonic() + timeout
     last_error: Exception | None = None
     while time.monotonic() < deadline:
@@ -51,7 +67,7 @@ def wait_for_http(process: subprocess.Popen[str], timeout: float = 3) -> bytes:
                 f"process exited before readiness: {process.returncode}\n{stdout}\n{stderr}"
             )
         try:
-            with urlopen(LOCAL_URL, timeout=0.25) as response:
+            with urlopen(base_url, timeout=0.25) as response:
                 body = response.read()
             assert process.poll() is None
             return body
@@ -62,32 +78,61 @@ def wait_for_http(process: subprocess.Popen[str], timeout: float = 3) -> bytes:
 
 
 def request_json(
+    base_url: str,
     path: str,
     *,
     method: str = "GET",
     payload: dict[str, object] | None = None,
+    headers: dict[str, str] | None = None,
 ) -> tuple[int, object]:
     body = json.dumps(payload).encode() if payload is not None else None
+    request_headers = {"Content-Type": "application/json"} if body is not None else {}
+    request_headers.update(headers or {})
     request = Request(
-        f"{LOCAL_URL}{path}",
+        f"{base_url}{path}",
         data=body,
         method=method,
-        headers={"Content-Type": "application/json"} if body is not None else {},
+        headers=request_headers,
     )
     with urlopen(request, timeout=2) as response:
         return response.status, json.loads(response.read())
 
 
-def assert_all_legacy_routes_reachable() -> None:
-    technicians_status, technicians = request_json("/api/technicians")
-    orders_status, orders = request_json("/api/orders")
-    memory_status, memory = request_json("/api/memory/learning")
+def login_cookie(base_url: str) -> str:
+    body = json.dumps({"username": "admin", "password": "smart2026AI"}).encode()
+    request = Request(
+        f"{base_url}/auth/login",
+        data=body,
+        method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+    with urlopen(request, timeout=2) as response:
+        assert response.status == 200
+        return response.headers["Set-Cookie"].split(";", 1)[0]
+
+
+def assert_all_legacy_routes_reachable(base_url: str) -> None:
+    headers = {"Cookie": login_cookie(base_url)}
+    technicians_status, technicians = request_json(
+        base_url,
+        "/api/technicians",
+        headers=headers,
+    )
+    orders_status, orders = request_json(base_url, "/api/orders", headers=headers)
+    memory_status, memory = request_json(
+        base_url,
+        "/api/memory/learning",
+        headers=headers,
+    )
     simulate_status, simulation = request_json(
+        base_url,
         "/api/dispatch/simulate",
         method="POST",
         payload={"order_id": "order_001"},
+        headers=headers,
     )
     confirm_status, confirmation = request_json(
+        base_url,
         "/api/dispatch/confirm",
         method="POST",
         payload={
@@ -96,8 +141,15 @@ def assert_all_legacy_routes_reachable() -> None:
             "duration_minutes": None,
             "feedback_comment": "",
         },
+        headers=headers,
     )
-    reset_status, reset = request_json("/api/reset", method="POST", payload={})
+    reset_status, reset = request_json(
+        base_url,
+        "/api/reset",
+        method="POST",
+        payload={},
+        headers=headers,
+    )
 
     assert {
         technicians_status,
@@ -125,7 +177,10 @@ def stop_process(process: subprocess.Popen[str]) -> tuple[str, str]:
 
 
 def test_real_console_launch_and_occupied_port_failure(tmp_path: Path) -> None:
+    port = free_port()
+    base_url = f"http://127.0.0.1:{port}"
     environment = os.environ.copy()
+    environment["SMART_DISPATCH_PORT"] = str(port)
     environment["SMART_DISPATCH_DB_PATH"] = str(tmp_path / "runtime.db")
     environment["SMART_DISPATCH_LEARNING_STORE_PATH"] = str(
         tmp_path / "learning_store.json"
@@ -141,10 +196,10 @@ def test_real_console_launch_and_occupied_port_failure(tmp_path: Path) -> None:
         stderr=subprocess.PIPE,
     )
     try:
-        wait_for_uvicorn_ready(primary)
-        body = wait_for_http(primary)
+        wait_for_uvicorn_ready(primary, port=port)
+        body = wait_for_http(primary, base_url=base_url)
         assert b"Smart Dispatch" in body
-        assert_all_legacy_routes_reachable()
+        assert_all_legacy_routes_reachable(base_url)
 
         second = subprocess.run(
             [str(CONSOLE_SCRIPT)],
@@ -163,7 +218,10 @@ def test_real_console_launch_and_occupied_port_failure(tmp_path: Path) -> None:
 
 
 def test_legacy_python_entrypoint_serves_same_app_and_routes(tmp_path: Path) -> None:
+    port = free_port()
+    base_url = f"http://127.0.0.1:{port}"
     environment = os.environ.copy()
+    environment["SMART_DISPATCH_PORT"] = str(port)
     environment["SMART_DISPATCH_DB_PATH"] = str(tmp_path / "legacy-entry.db")
     environment["SMART_DISPATCH_LEARNING_STORE_PATH"] = str(
         tmp_path / "legacy-learning-store.json"
@@ -178,8 +236,8 @@ def test_legacy_python_entrypoint_serves_same_app_and_routes(tmp_path: Path) -> 
         stderr=subprocess.PIPE,
     )
     try:
-        wait_for_uvicorn_ready(process)
-        assert b"Smart Dispatch" in wait_for_http(process)
-        assert_all_legacy_routes_reachable()
+        wait_for_uvicorn_ready(process, port=port)
+        assert b"Smart Dispatch" in wait_for_http(process, base_url=base_url)
+        assert_all_legacy_routes_reachable(base_url)
     finally:
         stop_process(process)

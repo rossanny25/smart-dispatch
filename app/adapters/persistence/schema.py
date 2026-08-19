@@ -1,6 +1,7 @@
 from sqlalchemy import (
     CheckConstraint,
     Column,
+    Float,
     ForeignKey,
     ForeignKeyConstraint,
     Index,
@@ -62,6 +63,118 @@ configuration_versions = Table(
         name="ck_configuration_registry_sha256",
     ),
 )
+
+app_users = Table(
+    "app_users",
+    metadata,
+    Column("id", Text, primary_key=True, nullable=False),
+    Column("username", Text, nullable=False),
+    Column("display_name", Text, nullable=False),
+    Column("role", Text, nullable=False),
+    Column("password_hash", Text, nullable=False),
+    Column("is_active", Integer, nullable=False),
+    Column("created_at", Text, nullable=False),
+    Column("updated_at", Text, nullable=False),
+    UniqueConstraint("username", name="uq_app_users_username"),
+    CheckConstraint(
+        "role IN ('admin','tecnico','dispatcher')",
+        name="ck_app_users_role",
+    ),
+    CheckConstraint("is_active IN (0, 1)", name="ck_app_users_active"),
+    CheckConstraint("length(username) BETWEEN 3 AND 80", name="ck_app_users_username"),
+    CheckConstraint("length(display_name) BETWEEN 1 AND 120", name="ck_app_users_name"),
+    CheckConstraint(
+        "password_hash LIKE 'pbkdf2_sha256$%'",
+        name="ck_app_users_password_hash",
+    ),
+)
+
+service_technicians = Table(
+    "service_technicians",
+    metadata,
+    Column("id", Text, primary_key=True, nullable=False),
+    Column("name", Text, nullable=False),
+    Column("status", Text, nullable=False),
+    Column("zone", Text, nullable=False),
+    Column("certifications_json", Text, nullable=False),
+    Column("shift_start", Text, nullable=False),
+    Column("shift_end", Text, nullable=False),
+    Column("active_workload_hours", Float, nullable=False),
+    Column("rating", Float, nullable=False),
+    Column("ppe_json", Text, nullable=False),
+    Column("gps_json", Text, nullable=False),
+    Column("created_at", Text, nullable=False),
+    Column("updated_at", Text, nullable=False),
+    UniqueConstraint("name", name="uq_service_technicians_name"),
+    CheckConstraint(
+        "status IN ('disponible','ocupado','fuera_servicio')",
+        name="ck_service_technicians_status",
+    ),
+    CheckConstraint("length(name) BETWEEN 2 AND 120", name="ck_service_technicians_name"),
+    CheckConstraint("length(zone) BETWEEN 2 AND 80", name="ck_service_technicians_zone"),
+    CheckConstraint("active_workload_hours BETWEEN 0 AND 16", name="ck_service_technicians_workload"),
+    CheckConstraint("rating BETWEEN 0 AND 5", name="ck_service_technicians_rating"),
+    CheckConstraint(
+        "shift_start GLOB '[0-2][0-9]:[0-5][0-9]' AND substr(shift_start, 1, 2) < '24'",
+        name="ck_service_technicians_shift_start",
+    ),
+    CheckConstraint(
+        "shift_end GLOB '[0-2][0-9]:[0-5][0-9]' AND substr(shift_end, 1, 2) < '24'",
+        name="ck_service_technicians_shift_end",
+    ),
+    CheckConstraint(
+        "json_valid(certifications_json) AND json_type(certifications_json) = 'array'",
+        name="ck_service_technicians_certifications",
+    ),
+    CheckConstraint(
+        "json_valid(ppe_json) AND json_type(ppe_json) = 'array'",
+        name="ck_service_technicians_ppe",
+    ),
+    CheckConstraint("json_valid(gps_json)", name="ck_service_technicians_gps"),
+    CheckConstraint(
+        "json_type(gps_json) = 'object' "
+        "AND json_type(gps_json, '$.lat') IN ('integer','real') "
+        "AND json_type(gps_json, '$.lng') IN ('integer','real')",
+        name="ck_service_technicians_gps_shape",
+    ),
+)
+
+service_visits = Table(
+    "service_visits",
+    metadata,
+    Column("id", Text, primary_key=True, nullable=False),
+    Column("order_id", Text, nullable=False),
+    Column(
+        "technician_id",
+        Text,
+        ForeignKey("service_technicians.id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
+    Column("technician_name", Text, nullable=False),
+    Column("client", Text, nullable=False),
+    Column("address", Text, nullable=False),
+    Column("zone", Text, nullable=False),
+    Column("category", Text, nullable=False),
+    Column("status", Text, nullable=False),
+    Column("scheduled_start_at", Text, nullable=False),
+    Column("scheduled_end_at", Text, nullable=False),
+    Column("duration_minutes", Integer, nullable=False),
+    Column("feedback_comment", Text, nullable=False),
+    Column("created_at", Text, nullable=False),
+    Column("updated_at", Text, nullable=False),
+    CheckConstraint(
+        "status IN ('programada','completada','cancelada')",
+        name="ck_service_visits_status",
+    ),
+    CheckConstraint("duration_minutes BETWEEN 1 AND 1440", name="ck_service_visits_duration"),
+    CheckConstraint("length(order_id) BETWEEN 1 AND 120", name="ck_service_visits_order"),
+    CheckConstraint("length(technician_name) BETWEEN 2 AND 120", name="ck_service_visits_technician_name"),
+    CheckConstraint("length(zone) BETWEEN 2 AND 80", name="ck_service_visits_zone"),
+    UniqueConstraint("order_id", name="uq_service_visits_order"),
+)
+
+Index("ix_service_visits_technician_start", service_visits.c.technician_id, service_visits.c.scheduled_start_at)
+Index("ix_service_visits_start", service_visits.c.scheduled_start_at)
 
 work_order_analyses = Table(
     "work_order_analyses",

@@ -6,8 +6,19 @@ API routes require a valid `smart_dispatch_session` cookie created by
 
 ## GET `/api/technicians`
 
-Returns the in-memory technician array. No filtering, pagination, or canonical
-error envelope.
+Returns the SQLite-backed runtime technician roster. The table is bootstrapped
+from `data/seeds/technicians.json` only when empty.
+
+## POST `/api/technicians`
+
+Requires role `admin`. Creates a technician with name, status, zone,
+certifications, shift, active workload, rating, PPE, and GPS coordinates.
+Invalid payloads return `422`.
+
+## PATCH `/api/technicians/{technician_id}`
+
+Requires role `admin`. Updates technician operational fields. Changes affect
+the next dispatch simulation immediately.
 
 ## GET `/api/orders`
 
@@ -29,7 +40,9 @@ Required body fields:
 }
 ```
 
-Returns HTTP 201 with a heuristically classified order. Validation covers only field presence.
+Returns HTTP 201 with a heuristically classified order. Low-information text
+without a recognizable service incident or usable numbered address returns
+`422` with an actionable message.
 
 ## POST `/api/dispatch/simulate`
 
@@ -52,11 +65,40 @@ still lacks canonical run state, data freshness, and a stable error envelope.
 
 ## POST `/api/dispatch/confirm`
 
-Accepts an order, selected technician, override flag/feedback, and optional real duration. It mutates in-memory order/workload state and may write learning records to JSON.
+Accepts an order, selected technician, override flag/feedback, and optional
+real duration. It updates order state in compatibility storage, increments the
+selected technician workload in SQLite, may write learning records, and returns
+the created `visit`. If the same order was already confirmed, it returns the
+existing visit with `learnings_updated: []` and does not increment workload
+again.
+
+## GET `/api/visits`
+
+Returns SQLite-backed completed service visits for the calendar view, including
+order, technician, zone, time window, duration, feedback, and status. Technician
+names are resolved from the current SQLite technician roster when available.
 
 ## POST `/api/reset`
 
-Resets in-memory workloads and order statuses. It does not reliably restore the learning file to its original seed because initialization only writes when the file is absent.
+Reloads runtime technicians and demo orders from seeds, and restores the
+learning runtime file from `data/learning_store.json`. It also clears
+SQLite-backed service visits.
+
+## GET `/api/v1/admin/users`
+
+Requires role `admin`. Returns persisted application users without password
+material.
+
+## POST `/api/v1/admin/users`
+
+Requires role `admin` and `Idempotency-Key`. Creates a user with `username`,
+`display_name`, `role`, and `password`. Passwords are stored as PBKDF2 hashes.
+
+## PATCH `/api/v1/admin/users/{user_id}`
+
+Requires role `admin` and `Idempotency-Key`. Updates display name, role, active
+state, and optionally password. The API rejects attempts to disable or demote
+the last active admin.
 
 ## Required Contract Evolution
 

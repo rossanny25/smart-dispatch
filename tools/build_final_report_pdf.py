@@ -230,7 +230,7 @@ def build_story(styles):
                 ["Aplicacion en vivo", "https://smart-dispatch-q4xk.onrender.com"],
                 ["Repositorio GitHub", "https://github.com/rossanny25/smart-dispatch"],
                 ["Demo Docker local", "http://127.0.0.1:8050"],
-                ["Acceso demo", "Usuario tecnico-fisca / clave smart2026AI"],
+                ["Acceso demo", "Usuario admin / clave smart2026AI"],
                 ["Guia de ejecucion", "docs/runbook.md"],
                 ["Evidencia de sesion", "docs/usage-session-log.md"],
             ],
@@ -410,14 +410,14 @@ def build_story(styles):
                 "Runtime SQLite local: data/smart_dispatch.db.",
                 "Runtime Docker: volumen smart_dispatch_data.",
                 "Reset operativo: POST /api/reset o docker compose down -v.",
-                "Acceso demo: usuario tecnico-fisca, clave smart2026AI.",
+                "Acceso demo: usuario admin, clave smart2026AI.",
             ],
             styles,
         )
     )
     story.append(
         p(
-            "El sistema incluye login single-user para proteger la UI y las rutas API con cookie de sesion firmada. No incluye panel de administracion ni roles: la carga de informacion se realiza por seeds JSON versionados y por el flujo de aprendizaje del simulador.",
+            "El sistema incluye usuarios persistidos en SQLite, roles basicos y login con cookie de sesion firmada. Existen paneles admin para listar, crear y editar usuarios y tecnicos. Los tecnicos operativos se inicializan desde seeds solo cuando la tabla esta vacia; luego se editan en SQLite y afectan la siguiente simulacion de despacho.",
             styles,
         )
     )
@@ -494,7 +494,7 @@ def build_story(styles):
             [
                 ["Riesgo", "Mitigacion actual", "Pendiente"],
                 ["Exposicion accidental", "Default local 127.0.0.1; Docker explicito en 8050; login single-user.", "HTTPS y politicas de red."],
-                ["Credencial compartida", "Cookie firmada y credencial configurable por entorno.", "Usuarios, roles, auditoria y CSRF antes de uso multiusuario."],
+                ["Cuentas operativas", "Roles admin/tecnico/dispatcher, rutas admin protegidas y ultimo admin activo preservado.", "Auditoria y politicas de contrasena antes de uso productivo."],
                 ["Datos sensibles", "Evidencia demo y recomendacion por zona.", "Politica para datos reales."],
                 ["JSON malformado/grande", "/api/v1 limita 1 MiB y usa errores tipados.", "Migrar rutas legacy restantes."],
                 ["Excepciones inseguras", "Errores conocidos se mapean a respuestas estables.", "Politica productiva completa."],
@@ -557,9 +557,10 @@ def build_story(styles):
     story.append(
         bullet(
             [
-                "No hay login ni roles.",
-                "No hay panel admin.",
-                "La gestion de datos demo se hace por seeds JSON.",
+                "No hay fichas completas de tecnicos con documentos, contacto y auditoria, aunque ya existe administracion operativa basica con turnos y certificaciones.",
+                "No hay calendario de visitas ni mapa operativo.",
+                "No hay registro publico de usuarios ni recuperacion de clave por email.",
+                "Las ordenes demo siguen usando rutas de compatibilidad; los tecnicos ya usan SQLite como fuente runtime.",
                 "La UI legacy todavia muestra algunas trazas descriptivas.",
                 "No se implementa aprendizaje semantico completo de produccion.",
                 "No se garantiza persistencia productiva en hosting gratuito.",

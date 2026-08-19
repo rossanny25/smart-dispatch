@@ -31,20 +31,21 @@ Splitting backend/frontend can be deferred until the project needs independent d
 
 ## Data Loading Decision
 
-The prototype has single-user login for the operational demo, but no admin panel
-or public data-import UI. Data is loaded through reproducible seeds and local
-runtime persistence.
+The prototype has SQLite-backed users and a basic admin panel for account and
+role management, but no public data-import UI. Dispatch data is loaded through
+reproducible seeds and local runtime persistence.
 
 Current strategy:
 
-- Demo technicians live in `data/seeds/technicians.json`.
+- Technician bootstrap data lives in `data/seeds/technicians.json`.
 - Demo orders live in `data/seeds/orders.json`.
 - Legacy learning evidence starts from `data/learning_store.json`.
 - Docker stores runtime database and learning-copy state in the `smart_dispatch_data` volume.
 - Local Python stores SQLite state in `data/smart_dispatch.db`.
 - Alembic is used for database structure, not for demo content.
 
-This is enough for the current product scope because the goal is to demonstrate orchestration, memory, explainability, and reproducibility rather than user administration.
+This is enough for the current product scope because account administration now
+exists, while dispatch-data management remains reproducible and controlled.
 
 ## How To Add Or Change Demo Data
 
@@ -71,7 +72,8 @@ curl -X POST http://127.0.0.1:8050/api/reset
 ```
 
 The reset route reloads technicians and orders from `data/seeds/` and keeps the
-learning-store behavior compatible with the current demo.
+learning-store behavior compatible with the current demo. During normal use,
+technicians are edited through the admin UI and stored in SQLite.
 
 ## Why There Is No Public Import Endpoint
 
@@ -89,8 +91,7 @@ For the final report, state that public data management is intentionally out of 
 
 ## What To Tell The Teacher
 
-Smart Dispatch IA is a single-user dispatch simulator. It uses login for basic
-access control, seed files for reproducible scenarios, SQLite for runtime
-persistence, and Alembic for controlled schema evolution. There is no admin
-panel because the product focus is the agentic dispatch cycle and persistent
-memory, not multi-user data operations.
+Smart Dispatch IA is a dispatch simulator with basic account and technician
+administration. It uses SQLite-backed login, roles, and technician profiles for
+runtime operations; seed files remain as reproducible bootstrap fixtures.
+Calendars, maps, and full dispatch-data editing belong to later product slices.

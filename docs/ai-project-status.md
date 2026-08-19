@@ -1,6 +1,6 @@
 # AI Project Status - Smart Dispatch IA
 
-Last updated: 2026-08-11
+Last updated: 2026-08-19
 
 This file is the live handoff for any AI agent or human collaborator joining
 the project. It summarizes what exists, what is done, what is intentionally out
@@ -54,7 +54,10 @@ cold start before judging the deployment.
 | LLM/SLM local reflection | Done | Included in final report. |
 | Guided demo flow | Done | Header control resets seeded data and runs a guided dispatch review. |
 | Hard-rule evidence in UI | Done | Simulation exposes all technicians with pass/fail checks before score. |
-| Single-user access control | Done | UI and API protected by a signed session cookie. Default demo user: `tecnico-fisca`. |
+| User and role administration | Done | SQLite-backed users, admin bootstrap, role-aware login, and admin UI. |
+| Technician administration | Done | Runtime technicians are SQLite-backed and editable by admins. |
+| Dashboard navigation | Done | Main screen uses section navigation; admin users/technicians open in a separate window. |
+| Visit calendar | Done | Confirmed dispatches create SQLite-backed service visits shown in Calendario. |
 
 ## Stack
 
@@ -84,10 +87,10 @@ Open:
 http://127.0.0.1:8050
 ```
 
-Default demo login:
+Default admin login:
 
 ```text
-User: tecnico-fisca
+User: admin
 Password: smart2026AI
 ```
 
@@ -156,10 +159,16 @@ Important directories:
 
 ## Data Loading
 
-The project has single-user login for the demo, but no admin panel or public
-data-management UI. Demo information is loaded from versioned seed files:
+The project has SQLite-backed users, basic role administration, editable
+service technicians, and completed service visits. Technician records are
+bootstrapped once from:
 
 - `data/seeds/technicians.json`
+
+After startup, runtime technician edits are stored in SQLite and used by
+dispatch simulation immediately. Completed dispatches create `service_visits`
+records in SQLite for the Calendario view. Demo work orders still load from:
+
 - `data/seeds/orders.json`
 
 The legacy learning memory starts from:
@@ -172,7 +181,9 @@ Runtime data is written to ignored local files or Docker volumes:
 - `data/learning_store.runtime.json`
 - Docker volume `smart_dispatch_data`
 
-To edit demo data, update the seed JSON files and reset the demo.
+To edit technicians, log in as an admin and use the in-app technician
+administration panel. To reset technicians to the seed roster, use `/api/reset`
+or reset the Docker volume.
 
 ## Verification Already Performed
 
@@ -237,11 +248,53 @@ tests/unit/test_project_metadata.py
 29 passed
 ```
 
+Recent checks performed after user/role administration implementation:
+
+- Fresh startup runs migrations and bootstraps `admin` with role `admin`.
+- Passwords are stored as PBKDF2 hashes, never plaintext.
+- `/auth/session` returns role-aware session claims.
+- Admin users can list, create, and edit users under `/api/v1/admin/users`.
+- Technician users receive `403` on user-admin routes.
+- The last active admin cannot be disabled or demoted.
+- Active sessions are revalidated against SQLite, so demoted or disabled users
+  lose access on the next request.
+- Admin mutations store basic idempotency records and reject reused keys with
+  different payloads.
+- Login rejects oversized payloads and avoids falling back to the default admin
+  when the SQLite user store is corrupt.
+- Render blueprint generates `SMART_DISPATCH_SESSION_SECRET` and enables secure
+  cookies for HTTPS.
+- JavaScript syntax check passed with `node --check frontend/main.js`.
+- Docker HTTP verification passed on port `8050`: `/login` `200`, protected
+  admin API without session `401`, admin login `200`, `/auth/session` returned
+  `role=admin`, user list `200`, and technician creation `201`.
+- Focused auth/admin/migration/runtime checks passed:
+
+```text
+tests/integration/test_auth.py
+tests/integration/test_user_admin.py
+tests/integration/test_migrations.py
+tests/integration/test_startup_safety.py
+tests/unit/test_runtime.py
+63 passed, 1 deselected
+```
+
+The deselected test was `test_startup_lock_serializes_independent_processes`,
+an existing timing-sensitive multiprocessing assertion that intermittently
+measures just below its `0.4s` threshold on this machine.
+
 ## Known Limits
 
-- No admin panel.
-- No roles, registration, password reset, or multi-user administration.
+- No full technician profile editor yet.
+- No visit calendar or map view yet.
+- No public self-registration or password email delivery.
 - Runtime persistence on free hosting can be ephemeral.
+- Admin user writes currently use a compact auth-store helper instead of the
+  main dispatch unit-of-work abstraction.
+- Admin endpoints return pragmatic JSON bodies; the deeper canonical command
+  envelope can be added when the frontend migrates more `/api/v1` workflows.
+- Work orders still use compatibility route storage; technicians no longer use
+  JSON as their runtime source of truth.
 - The frontend still uses some legacy compatibility routes, now with richer evidence for the guided demo.
 - The canonical `/api/v1` backend is stronger than the current UI presentation.
 - No real GPS, traffic, weather, or LLM integration is connected.
@@ -254,13 +307,16 @@ Do not treat these as accidental omissions. They are documented MVP boundaries.
 
 Only do these if the user asks for more after the final delivery:
 
-1. Add a dedicated seeded `NO_FEASIBLE_CANDIDATES` order so the no-forced-recommendation state is easy to demo.
-2. Surface canonical `DispatchRun` state transitions from `/api/v1` in the frontend.
-3. Implement human decision and outcome commands on the canonical `/api/v1` flow.
-4. Complete episodic memory and semantic promotion with memory on/off comparison scenarios.
-5. Improve accessibility with visible focus, semantic labels, keyboard navigation, and readable errors.
-6. Add optional Ollama adapter for the `ANALYZE` stage.
-7. Expand authentication only if the product becomes multi-user.
+1. Expand technician profiles with contact fields, documents, and audit history.
+2. Expand the calendar into manual scheduling and visit status changes.
+3. Add no-cost map visualization for visits and zones.
+4. Migrate demo work orders and dispatch execution fully into SQLite-backed operational records.
+5. Add a dedicated seeded `NO_FEASIBLE_CANDIDATES` order so the no-forced-recommendation state is easy to demo.
+6. Surface canonical `DispatchRun` state transitions from `/api/v1` in the frontend.
+7. Implement human decision and outcome commands on the canonical `/api/v1` flow.
+8. Complete episodic memory and semantic promotion with memory on/off comparison scenarios.
+9. Improve accessibility with visible focus, semantic labels, keyboard navigation, and readable errors.
+10. Add optional Ollama adapter for the `ANALYZE` stage.
 
 ## Agent Rules
 

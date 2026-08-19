@@ -56,13 +56,48 @@
       </div>
     </header>
 
+    <nav class="section-nav" aria-label="Secciones principales">
+      <button type="button" class="section-nav-btn active" data-view-target="request">
+        <i class="fa-solid fa-file-signature"></i>
+        <span>Nueva Solicitud</span>
+      </button>
+      <button type="button" class="section-nav-btn" data-view-target="orders">
+        <i class="fa-solid fa-list-check"></i>
+        <span>Cola de Órdenes</span>
+      </button>
+      <button type="button" class="section-nav-btn" data-view-target="guided">
+        <i class="fa-solid fa-compass"></i>
+        <span>Recorrido Guiado</span>
+      </button>
+      <button type="button" class="section-nav-btn" data-view-target="console">
+        <i class="fa-solid fa-rotate"></i>
+        <span>Consola y Recomendación</span>
+      </button>
+      <button type="button" class="section-nav-btn" data-view-target="technicians">
+        <i class="fa-solid fa-users"></i>
+        <span>Técnicos</span>
+      </button>
+      <button type="button" class="section-nav-btn" data-view-target="calendar">
+        <i class="fa-solid fa-calendar-days"></i>
+        <span>Calendario</span>
+      </button>
+      <button type="button" class="section-nav-btn" data-view-target="memory">
+        <i class="fa-solid fa-database"></i>
+        <span>Memoria</span>
+      </button>
+      <button type="button" class="section-nav-btn admin-nav-btn" id="btn-admin-open" hidden>
+        <i class="fa-solid fa-user-shield"></i>
+        <span>Administración</span>
+      </button>
+    </nav>
+
     <main class="app-content">
       
       <!-- Panel Izquierdo: Formularios y Trazas de Agentes -->
       <section class="panel-left">
         
         <!-- Crear Nueva Orden -->
-        <div class="card card-glow">
+        <div class="card card-glow app-view" data-view="request">
           <div class="card-header">
             <h2><i class="fa-solid fa-file-signature"></i> Nueva Solicitud de Servicio</h2>
           </div>
@@ -89,12 +124,13 @@
                 </div>
               </div>
               <button type="submit" class="btn btn-primary"><i class="fa-solid fa-bolt"></i> Ingresar y Procesar con IA</button>
+              <div id="order-validation-message" class="form-validation-message" role="alert" hidden></div>
             </form>
           </div>
         </div>
 
         <!-- Demo guiada -->
-        <div class="card card-glass" id="guided-demo-card">
+        <div class="card card-glass app-view view-hidden" id="guided-demo-card" data-view="guided">
           <div class="card-header">
             <h2><i class="fa-solid fa-compass"></i> Recorrido Guiado</h2>
             <span class="badge badge-status-pendiente" id="guided-demo-state">Listo</span>
@@ -111,11 +147,138 @@
           </div>
         </div>
 
+        <!-- Administración de técnicos -->
+        <div class="card card-glass admin-card admin-tab-panel" id="admin-tech-card" data-admin-tab-panel="technicians" hidden>
+          <div class="card-header">
+            <h2><i class="fa-solid fa-user-gear"></i> Administración de Técnicos</h2>
+            <span class="badge badge-status-pendiente" id="admin-tech-state">Listo</span>
+          </div>
+          <div class="card-body">
+            <form id="admin-tech-form" class="admin-tech-form">
+              <input type="hidden" id="admin-tech-id">
+              <div class="admin-form-grid">
+                <div class="form-group">
+                  <label for="admin-tech-name">Nombre</label>
+                  <input type="text" id="admin-tech-name" autocomplete="off" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-status">Estado operativo</label>
+                  <select id="admin-tech-status" required>
+                    <option value="disponible">Disponible</option>
+                    <option value="ocupado">Ocupado</option>
+                    <option value="fuera_servicio">Fuera de servicio</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-zone">Zona base</label>
+                  <select id="admin-tech-zone" required>
+                    <option value="Palermo">Palermo</option>
+                    <option value="Centro">Centro</option>
+                    <option value="Belgrano">Belgrano</option>
+                    <option value="Almagro">Almagro</option>
+                    <option value="Caballito">Caballito</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-certifications">Certificaciones</label>
+                  <input type="text" id="admin-tech-certifications" placeholder="Gasista Matriculado, Técnico HVAC" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-shift-start">Inicio de turno</label>
+                  <input type="time" id="admin-tech-shift-start" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-shift-end">Fin de turno</label>
+                  <input type="time" id="admin-tech-shift-end" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-workload">Carga actual (hs)</label>
+                  <input type="number" id="admin-tech-workload" min="0" max="16" step="0.1" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-rating">Calificación</label>
+                  <input type="number" id="admin-tech-rating" min="0" max="5" step="0.1" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-ppe">EPP disponible</label>
+                  <input type="text" id="admin-tech-ppe" placeholder="Arnés, Casco dieléctrico">
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-gps-lat">GPS latitud</label>
+                  <input type="number" id="admin-tech-gps-lat" min="-90" max="90" step="0.0001" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-tech-gps-lng">GPS longitud</label>
+                  <input type="number" id="admin-tech-gps-lng" min="-180" max="180" step="0.0001" required>
+                </div>
+              </div>
+              <div class="admin-actions">
+                <button type="submit" class="btn btn-primary" id="admin-save-tech">
+                  <i class="fa-solid fa-floppy-disk"></i> Guardar técnico
+                </button>
+                <button type="button" class="btn btn-secondary" id="admin-clear-tech">
+                  <i class="fa-solid fa-eraser"></i> Limpiar
+                </button>
+              </div>
+            </form>
+            <p class="admin-message" id="admin-tech-message" hidden></p>
+          </div>
+        </div>
+
+        <!-- Administración de usuarios -->
+        <div class="card card-glass admin-card admin-tab-panel" id="admin-users-card" data-admin-tab-panel="users" hidden>
+          <div class="card-header">
+            <h2><i class="fa-solid fa-user-shield"></i> Administración de Usuarios</h2>
+            <span class="badge badge-status-pendiente" id="admin-users-state">Cargando</span>
+          </div>
+          <div class="card-body">
+            <form id="admin-user-form" class="admin-user-form">
+              <input type="hidden" id="admin-user-id">
+              <div class="admin-form-grid">
+                <div class="form-group">
+                  <label for="admin-username">Usuario</label>
+                  <input type="text" id="admin-username" autocomplete="off" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-display-name">Nombre visible</label>
+                  <input type="text" id="admin-display-name" autocomplete="off" required>
+                </div>
+                <div class="form-group">
+                  <label for="admin-role">Rol</label>
+                  <select id="admin-role" required>
+                    <option value="tecnico">Técnico</option>
+                    <option value="dispatcher">Dispatcher</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="admin-password">Clave</label>
+                  <input type="password" id="admin-password" autocomplete="new-password" placeholder="Requerida al crear">
+                </div>
+              </div>
+              <label class="checkbox-row" for="admin-active">
+                <input type="checkbox" id="admin-active" checked>
+                <span>Usuario activo</span>
+              </label>
+              <div class="admin-actions">
+                <button type="submit" class="btn btn-primary" id="admin-save-user">
+                  <i class="fa-solid fa-floppy-disk"></i> Guardar usuario
+                </button>
+                <button type="button" class="btn btn-secondary" id="admin-clear-user">
+                  <i class="fa-solid fa-eraser"></i> Limpiar
+                </button>
+              </div>
+            </form>
+            <p class="admin-message" id="admin-users-message" hidden></p>
+            <div class="admin-users-list" id="admin-users-list"></div>
+          </div>
+        </div>
+
         <!-- Trazabilidad del Ciclo de Agentes -->
-        <div class="card card-glass" id="agent-cycle-card" style="display: none;">
+        <div class="card card-glass app-view view-hidden" id="agent-cycle-card" data-view="console">
           <div class="card-header">
             <h2><i class="fa-solid fa-rotate"></i> Consola del Ciclo de Agentes (OODA)</h2>
-            <span class="active-badge animate-pulse" id="cycle-status-text">Procesando...</span>
+            <span class="badge badge-status-pendiente" id="cycle-status-text">En espera</span>
           </div>
           <div class="card-body">
             
@@ -129,7 +292,7 @@
                   <h3>1. Agente de Captura</h3>
                   <p class="step-summary">Estructurando lenguaje natural...</p>
                 </div>
-                <div class="step-status"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                <div class="step-status"></div>
               </div>
 
               <!-- 2. Analyze Agent -->
@@ -193,7 +356,7 @@
       <section class="panel-right">
         
         <!-- Tarjeta de Recomendación de Asignación -->
-        <div class="card card-glow" id="recommendation-card" style="display: none;">
+        <div class="card card-glow app-view view-hidden" id="recommendation-card" data-view="console" style="display: none;">
           <div class="card-header">
             <h2><i class="fa-solid fa-award"></i> Asignación Recomendada por IA</h2>
           </div>
@@ -211,6 +374,7 @@
                   <span class="stat-badge"><i class="fa-solid fa-route"></i> <span id="rec-travel-time">0</span> min viaje</span>
                   <span class="stat-badge"><i class="fa-solid fa-clock"></i> 90 min estimación</span>
                 </div>
+                <div class="decision-breakdown" id="decision-breakdown"></div>
               </div>
             </div>
 
@@ -218,6 +382,9 @@
               <div class="hard-rules-header">
                 <h3><i class="fa-solid fa-shield-halved"></i> Reglas duras antes del score</h3>
                 <span id="hard-rules-summary">Sin evaluación</span>
+              </div>
+              <div class="decision-explainer">
+                Primero se descartan técnicos por disponibilidad, certificaciones, turno, jornada, conducción y EPP. Solo los aptos reciben score; la confianza explica calidad de evidencia, no reemplaza el score.
               </div>
               <div class="hard-rules-list" id="hard-rules-list"></div>
             </div>
@@ -247,7 +414,7 @@
         </div>
 
         <!-- Historial de Órdenes Pendientes -->
-        <div class="card card-glass">
+        <div class="card card-glass app-view view-hidden" data-view="orders">
           <div class="card-header">
             <h2><i class="fa-solid fa-list-check"></i> Cola de Órdenes de Trabajo</h2>
           </div>
@@ -259,23 +426,53 @@
         </div>
 
         <!-- Técnicos de Campo -->
-        <div class="card card-glass">
+        <div class="card card-glass app-view view-hidden" data-view="technicians">
           <div class="card-header">
             <h2><i class="fa-solid fa-users"></i> Técnicos de Servicio de Campo</h2>
           </div>
           <div class="card-body">
+            <div class="ops-explainer">
+              <strong>Lectura operacional:</strong> cada tarjeta muestra estado, zona base, turno, carga acumulada, certificaciones, EPP y última coordenada conocida. El backend usa estos datos como restricciones antes de puntuar candidatos.
+            </div>
             <div id="technicians-grid" class="tech-grid">
               <!-- Cargado dinámicamente -->
             </div>
           </div>
         </div>
 
+        <!-- Calendario de visitas -->
+        <div class="card card-glass app-view view-hidden" data-view="calendar">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-calendar-days"></i> Calendario de Visitas</h2>
+            <span class="badge badge-status-pendiente" id="calendar-count">Sin visitas</span>
+          </div>
+          <div class="card-body">
+            <div class="calendar-toolbar">
+              <div class="form-group">
+                <label for="calendar-tech-filter">Técnico</label>
+                <select id="calendar-tech-filter">
+                  <option value="">Todos los técnicos</option>
+                </select>
+              </div>
+              <div class="calendar-summary" id="calendar-summary">
+                Sin visitas registradas todavía.
+              </div>
+            </div>
+            <div id="calendar-list" class="calendar-list">
+              <!-- Cargado dinámicamente -->
+            </div>
+          </div>
+        </div>
+
         <!-- Memoria Semántica (Conocimiento Aprendido) -->
-        <div class="card card-glass">
+        <div class="card card-glass app-view view-hidden" data-view="memory">
           <div class="card-header">
             <h2><i class="fa-solid fa-database"></i> Memoria Persistente de Aprendizaje Semántico</h2>
           </div>
           <div class="card-body">
+            <div class="ops-explainer">
+              <strong>Cómo aprende:</strong> esta memoria es un registro determinístico. Se alimenta de cierres de servicio y comentarios del despachador; puede sumar evidencia histórica al score, pero nunca habilita a un técnico que falló una regla dura.
+            </div>
             <div id="memory-list" class="memory-list">
               <!-- Cargado dinámicamente -->
             </div>
@@ -285,6 +482,32 @@
       </section>
 
     </main>
+  </div>
+
+  <!-- Ventana de Administración -->
+  <div id="admin-window" class="admin-window" hidden>
+    <div class="admin-window-panel card-glass" role="dialog" aria-modal="true" aria-labelledby="admin-window-title">
+      <div class="admin-window-header">
+        <div>
+          <h2 id="admin-window-title"><i class="fa-solid fa-user-shield"></i> Administración</h2>
+          <span>Gestión de usuarios, roles y técnicos de campo</span>
+        </div>
+        <button type="button" class="icon-btn" id="admin-window-close" title="Cerrar administración" aria-label="Cerrar administración">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="admin-window-tabs" role="tablist">
+        <button type="button" class="admin-tab-btn active" data-admin-tab="users">
+          <i class="fa-solid fa-users-gear"></i>
+          <span>Usuarios y roles</span>
+        </button>
+        <button type="button" class="admin-tab-btn" data-admin-tab="technicians">
+          <i class="fa-solid fa-user-gear"></i>
+          <span>Técnicos</span>
+        </button>
+      </div>
+      <div class="admin-window-body" id="admin-window-body"></div>
+    </div>
   </div>
 
   <!-- Modal de Finalización de Servicio -->

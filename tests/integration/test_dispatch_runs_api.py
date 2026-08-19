@@ -9,14 +9,14 @@ from sqlalchemy import text
 
 from app.adapters.persistence.database import create_sqlite_engine
 from app.main import create_app
-from app.migrations.runtime import upgrade_to_head
+from app.startup import prepare_runtime
 from tests.asgi_client import request_asgi
 
 
 @pytest.fixture
 def dispatch_app(tmp_path: Path):
     database_path = tmp_path / "dispatch.db"
-    upgrade_to_head(database_path)
+    prepare_runtime(database_path)
     return create_app(database_path=database_path), database_path
 
 

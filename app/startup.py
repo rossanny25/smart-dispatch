@@ -6,6 +6,8 @@ import fcntl
 from pathlib import Path
 from typing import Iterator
 
+from app.auth import ensure_default_admin_user
+from app.adapters.legacy.compatibility import bootstrap_service_technicians
 from app.adapters.persistence.backup import (
     create_verified_backup,
     restore_verified_backup,
@@ -74,6 +76,10 @@ def prepare_runtime(
                 operation = "Alembic head verification"
                 if pending_checker(path):
                     raise RuntimeError("migration head was not reached")
+                operation = "default admin bootstrap"
+                ensure_default_admin_user(path)
+                operation = "service technician bootstrap"
+                bootstrap_service_technicians(path)
             except BaseException as error:
                 recovery_operation = "verified backup restoration"
                 try:

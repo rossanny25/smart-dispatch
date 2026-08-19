@@ -33,15 +33,15 @@ uv run smart-dispatch
 Open `http://127.0.0.1:8000`. The application is intentionally bound to
 `127.0.0.1:8000` with one Uvicorn worker by default.
 
-Default demo login:
+Default admin login:
 
-- User: `tecnico-fisca`
+- User: `admin`
 - Password: `smart2026AI`
 
-The credentials can be overridden with `SMART_DISPATCH_LOGIN_USER` and
-`SMART_DISPATCH_LOGIN_PASSWORD`. Set `SMART_DISPATCH_SESSION_SECRET` in any
-shared or hosted environment so session cookies are signed with a private
-deployment secret.
+The initial admin credentials can be overridden with
+`SMART_DISPATCH_LOGIN_USER` and `SMART_DISPATCH_LOGIN_PASSWORD`. Set
+`SMART_DISPATCH_SESSION_SECRET` in any shared or hosted environment so session
+cookies are signed with a private deployment secret.
 
 The temporary compatibility entry point runs the same canonical launcher:
 
@@ -82,10 +82,16 @@ uv run pytest
 The runtime uses `data/smart_dispatch.db`. Pending migrations run before HTTP
 serving, and an existing database is backed up through SQLite's backup API
 under `data/backups/` before upgrade. Runtime database and backup artifacts
-are ignored. The compatibility API reads `data/learning_store.json` as its
-initial evidence but writes changes to the ignored
-`data/learning_store.runtime.json` working copy, so the tracked evidence
-remains byte-preserved.
+are ignored.
+
+Users and service technicians are SQLite-backed. A fresh database bootstraps
+technicians from `data/seeds/technicians.json`, then admin edits are stored in
+SQLite and affect dispatch immediately. The compatibility API reads
+`data/learning_store.json` as its initial evidence but writes changes to the
+ignored `data/learning_store.runtime.json` working copy, so the tracked
+evidence remains byte-preserved.
+Confirmed dispatches also create SQLite-backed `service_visits` records shown
+in the Calendario view.
 
 ## Canonical Work Order capture
 
@@ -113,9 +119,10 @@ This slice captures only schema-valid raw input. Dispatch analysis, derived
 requirements, recommendations, and browser migration belong to later stories,
 so the current SPA continues to use the compatibility API.
 
-This MVP is local-first and uses single-user access control. HTTPS termination,
-multi-user operation, roles, and a public administration panel remain outside
-its current scope.
+This MVP is local-first and uses SQLite-backed users, roles, technician
+operations, and completed visit history. HTTPS termination, public
+self-registration, password email delivery, manual scheduling, maps, and full
+work-order administration remain outside its current scope.
 
 For the final delivery checklist, see
 [`docs/final-delivery-guide.md`](docs/final-delivery-guide.md).
@@ -134,3 +141,8 @@ For the publication layout and data-loading strategy, see
 
 For free/low-cost deployment options and the Render blueprint fallback, see
 [`docs/deployment-options.md`](docs/deployment-options.md).
+
+Deployment note: `render.yaml` currently targets the `changes` branch. If the
+production service is configured in Render to watch `main`, either switch the
+service branch to `changes` before redeploying or merge this branch into
+`main`.
